@@ -9,23 +9,40 @@
 #include <asm/unistd.h>
 #include <pthread.h>
 
+#include <iostream>
+#include <iomanip>
+
+static void *sample_handler_fn(void *args);
+
 class perf_event_prof
 {
+    friend void *sample_handler_fn(void *args);
+
 public:
     perf_event_prof();
     ~perf_event_prof();
 
-    void begin_prof();
+    int begin_prof();
     void end_prof();
 
-    void print_samples();
+    void set_outputstream(std::ostream *os) { this->os_out = os; }
+    void set_errorstream(std::ostream *os) { this->os_err = os; }
 
-public:
+private:
+    int init_sample_handler();
     int read_single_sample();
     int read_all_samples();
 
+    int read_mmap_buffer(char *out, size_t sz);
+    void skip_mmap_buffer(size_t sz);
+    
+    void process_lost_sample();
+    void process_freq_sample();
+    void process_exit_sample();
+    
 private:
     int ret;
+    int ready;
 
     int fd;
 
@@ -34,44 +51,16 @@ private:
 
     uint64_t sample_period;
     uint64_t counter_value;
+
     uint64_t collected_samples;
+    uint64_t lost_samples;
 
     size_t mmap_pages;
     size_t mmap_size;
     size_t pgsz;
     size_t pgmsk;
+
+    std::ostream *os_out;
+    std::ostream *os_err;
+    pthread_t sample_handler_thr;
 };
-
-
-// the following was shamelessly stolen from libpfm
-int
-perf_read_buffer(struct perf_event_mmap_page *hdr, size_t pgmsk, char *buf, size_t sz)
-{
-	char *data;
-	unsigned long tail;
-	size_t avail_sz, m, c;
-	
-	data = ((char *)hdr)+sysconf(_SC_PAGESIZE);
-	tail = hdr->data_tail & pgmsk;
-	avail_sz = hdr->data_head - hdr->data_tail;
-	if (sz > avail_sz)
-		return -1;
-	c = pgmsk + 1 -  tail;
-	m = c < sz ? c : sz;
-	memcpy(buf, data+tail, m);
-	if ((sz - m) > 0)
-		memcpy(buf+m, data, sz - m);
-	hdr->data_tail += sz;
-
-	return 0;
-}
-
-void
-perf_skip_buffer(struct perf_event_mmap_page *hdr, size_t sz)
-{
-    if ((hdr->data_tail + sz) > hdr->data_head)
-        sz = hdr->data_head - hdr->data_tail;
-
-    hdr->data_tail += sz;
-}
-
