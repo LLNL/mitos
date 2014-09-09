@@ -1,4 +1,4 @@
-#include "perf_event_prof.h"
+#include "perfsmpl.h"
 
 static void *sample_handler_fn(void *args)
 {
@@ -91,6 +91,14 @@ void perf_event_prof::end_prof()
 
     ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
     read(fd, &counter_value, sizeof(uint64_t));
+}
+
+void perf_event_prof::readout()
+{
+    *os_out << "**** Sampling Summary ****" << std::endl;
+    *os_out << "counter value : " << counter_value << std::endl;
+    *os_out << "collected samples : " << collected_samples << std::endl;
+    *os_out << "lost samples : " << lost_samples << std::endl;
 }
 
 int perf_event_prof::read_single_sample()
@@ -226,24 +234,4 @@ void perf_event_prof::process_freq_sample()
 
 	fprintf(options.output_file,"%s value=%"PRIu64" event ID=%"PRIu64"\n", mode ? "Throttled" : "Unthrottled", thr.id, thr.stream_id);
     */
-}
-void
-do_werk()
-{
-    double v = 241209092.548394035;
-    for(int i=0; i<512; i++)
-        for(int j=0; j<512; j++)
-            for(int k=0; k<512; k++)
-                v = v*v;
-    printf("v : %f\n",v);
-}
-
-int
-main(int argc, char **argv)
-{
-    perf_event_prof mprof;
-    mprof.set_outputstream(&std::cout);
-    mprof.begin_prof();
-    do_werk();
-    mprof.end_prof();
 }

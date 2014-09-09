@@ -28,6 +28,8 @@ public:
     void set_outputstream(std::ostream *os) { this->os_out = os; }
     void set_errorstream(std::ostream *os) { this->os_err = os; }
 
+    void readout();
+
 private:
     int init_sample_handler();
     int read_single_sample();
