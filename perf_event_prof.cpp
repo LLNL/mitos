@@ -87,7 +87,7 @@ void perf_event_prof::end_prof()
     pthread_cancel(sample_handler_thr);
     pthread_join(sample_handler_thr,NULL);
 
-    read_all_samples(); // flush it out
+    read_all_samples(); // flush out remaining samples
 
     ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
     read(fd, &counter_value, sizeof(uint64_t));
