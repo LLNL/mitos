@@ -4,7 +4,7 @@ static void *sample_handler_fn(void *args)
 {
     perf_event_prof *pep = (perf_event_prof*)args;
 
-    for(;;) {
+    while(!pep->stop) {
         pep->read_all_samples();
     }
 }
@@ -12,33 +12,52 @@ static void *sample_handler_fn(void *args)
 perf_event_prof::perf_event_prof()
 {
     // Defaults
-    ret = 0;
     mmap_pages = 8;
     sample_period = 10;
     pgsz = sysconf(_SC_PAGESIZE);
     mmap_size = (mmap_pages+1)*pgsz;
     pgmsk = mmap_pages*pgsz-1;
 
+    os_out = &std::cout;
+    os_err = &std::cerr;
+
+    ret = 0;
+    ready = 0;
+    stop = 0;
+
+    collected_samples = 0;
+    lost_samples = 0;
+
+}
+
+perf_event_prof::~perf_event_prof()
+{
+    munmap(mmap_buf,mmap_size);
+    close(fd);
+}
+
+int perf_event_prof::prepare_perf()
+{
     // Setup
     memset(&pe, 0, sizeof(struct perf_event_attr));
     pe.type = PERF_TYPE_HARDWARE;
     pe.size = sizeof(struct perf_event_attr);
-    pe.config = PERF_COUNT_HW_INSTRUCTIONS;
-    pe.sample_type = PERF_SAMPLE_IP | PERF_SAMPLE_TIME;
+    pe.config = PERF_COUNT_HW_REF_CPU_CYCLES;
+    pe.sample_type = PERF_SAMPLE_CALLCHAIN;
+    pe.sample_period = sample_period;
     pe.mmap = 1;
     pe.mmap_data = 1;
-    pe.sample_period = sample_period;
     pe.disabled = 1;
-    pe.exclude_kernel = 1;
     pe.exclude_hv = 1;
+    pe.exclude_kernel = 1;
 
     // Calling pid, all cpus, single event group, no flags
     fd = syscall(__NR_perf_event_open, &pe,0,-1,-1,0);
 
     if (fd == -1) {
-       fprintf(stderr, "Error opening leader %llx\n", pe.config);
+       *os_err << "Error opening leader " << pe.config << std::endl;
        ready=0;
-       return;
+       return -1;
     }
 
     // Create mmap buffer for samples
@@ -46,18 +65,31 @@ perf_event_prof::perf_event_prof()
         mmap(NULL, mmap_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 
     if(mmap_buf == MAP_FAILED) {
-       fprintf(stderr, "Error mmapping buffer\n");
+       *os_err << "Error mmap-ing buffer " << std::endl;
        ready=0;
-       return;
+       return -1;
     }
 
     ready=1;
+
+    return 0;
 }
 
-perf_event_prof::~perf_event_prof()
+int perf_event_prof::prepare_symtab()
 {
-    munmap(mmap_buf,mmap_size);
-    close(fd);
+    avail_line_num = Dyninst::SymtabAPI::Symtab::openFile(symtab_obj,"/proc/self/exe");
+}
+
+int perf_event_prof::prepare()
+{
+    ret = 0;
+    ret |= prepare_perf();
+    ret |= prepare_symtab();
+
+    if(ret == 0)
+        ready = 1;
+
+    return ret;
 }
 
 int perf_event_prof::init_sample_handler()
@@ -67,6 +99,13 @@ int perf_event_prof::init_sample_handler()
 
 int perf_event_prof::begin_prof()
 {
+    if(!ready)
+    {
+        *os_err << "Not ready to begin sampling!\n" << std::endl;
+        *os_err << "Did you prepare()?\n" << std::endl;
+        return -1;
+    }
+
     ret = init_sample_handler();
 
     if(ret)
@@ -84,7 +123,7 @@ int perf_event_prof::begin_prof()
 
 void perf_event_prof::end_prof()
 {
-    pthread_cancel(sample_handler_thr);
+    stop = 1;
     pthread_join(sample_handler_thr,NULL);
 
     read_all_samples(); // flush out remaining samples
@@ -96,29 +135,132 @@ void perf_event_prof::end_prof()
 void perf_event_prof::readout()
 {
     *os_out << "**** Sampling Summary ****" << std::endl;
+    *os_out << std::dec;
     *os_out << "counter value : " << counter_value << std::endl;
     *os_out << "collected samples : " << collected_samples << std::endl;
     *os_out << "lost samples : " << lost_samples << std::endl;
+    os_out->flush();
 }
 
 int perf_event_prof::read_single_sample()
 {
-    int ret;
     uint64_t val;
+    uint64_t type = pe.sample_type;
 
-    // READ IP
-    ret = read_mmap_buffer((char*)&val,sizeof(uint64_t));
-    if(ret)
-        *os_err << "Can't read mmap buffer!\n" << std::endl;
-    else
-        *os_out << "IP : " << std::hex << val << std::endl;
+    ret = 0;
 
-    // READ TIMESTAMP
-    ret |= read_mmap_buffer((char*)&val,sizeof(uint64_t));
-    if(ret)
-        *os_err << "Can't read mmap buffer!\n" << std::endl;
-    else
-        *os_out << "TS : " << std::hex << val << std::endl;
+    //struct {
+    //    struct perf_event_header header;
+    //    u64   sample_id;  /* if PERF_SAMPLE_IDENTIFIER */
+    //    u64   ip;         /* if PERF_SAMPLE_IP */
+    //    u32   pid, tid;   /* if PERF_SAMPLE_TID */
+    //    u64   time;       /* if PERF_SAMPLE_TIME */
+    //    u64   addr;       /* if PERF_SAMPLE_ADDR */
+    //    u64   id;         /* if PERF_SAMPLE_ID */
+    //    u64   stream_id;  /* if PERF_SAMPLE_STREAM_ID */
+    //    u32   cpu, res;   /* if PERF_SAMPLE_CPU */
+    //    u64   period;     /* if PERF_SAMPLE_PERIOD */
+    //    struct read_format v; /* if PERF_SAMPLE_READ */
+    //    u64   nr;         /* if PERF_SAMPLE_CALLCHAIN */
+    //    u64   ips[nr];    /* if PERF_SAMPLE_CALLCHAIN */
+    //    u32   size;       /* if PERF_SAMPLE_RAW */
+    //    char  data[size]; /* if PERF_SAMPLE_RAW */
+    //    u64   bnr;        /* if PERF_SAMPLE_BRANCH_STACK */
+    //    struct perf_branch_entry lbr[bnr];
+    //                    /* if PERF_SAMPLE_BRANCH_STACK */
+    //    u64   abi;        /* if PERF_SAMPLE_REGS_USER */
+    //    u64   regs[weight(mask)];
+    //                    /* if PERF_SAMPLE_REGS_USER */
+    //    u64   size;       /* if PERF_SAMPLE_STACK_USER */
+    //    char  data[size]; /* if PERF_SAMPLE_STACK_USER */
+    //    u64   dyn_size;   /* if PERF_SAMPLE_STACK_USER */
+    //    u64   weight;     /* if PERF_SAMPLE_WEIGHT */
+    //    u64   data_src;   /* if PERF_SAMPLE_DATA_SRC */
+    //    u64   transaction;/* if PERF_SAMPLE_TRANSACTION */
+    //};
+
+
+    if(type & PERF_SAMPLE_IP)
+    {
+        ret |= read_mmap_buffer((char*)&val,sizeof(uint64_t));
+        if(ret)
+            *os_err << "Can't read mmap buffer!\n" << std::endl;
+        else
+        {
+            //*os_out << "IP : " << std::hex << val << std::endl;
+
+            if(avail_line_num)
+            {
+                std::vector<Dyninst::SymtabAPI::Statement*> stats;
+                ret = symtab_obj->getSourceLines(stats,val);
+                if(ret)
+                {
+                    *os_out << "Source : " << stats[0]->getFile() << std::endl;
+                    *os_out << "Line : " << stats[0]->getLine() << std::endl;
+                }
+            }
+        }
+
+    }
+
+    if(type & PERF_SAMPLE_TID)
+    {
+        struct { uint32_t pid, tid; } pid;
+        ret |= read_mmap_buffer((char*)&pid,sizeof(pid));
+        if(ret)
+            *os_err << "Can't read mmap buffer!\n" << std::endl;
+        else
+        {
+            *os_out << "PID : " << std::dec << pid.pid << std::endl;
+            *os_out << "TID : " << std::dec << pid.tid << std::endl;
+        }
+    }
+
+    if(type & PERF_SAMPLE_TIME)
+    {
+        ret |= read_mmap_buffer((char*)&val,sizeof(uint64_t));
+        if(ret)
+            *os_err << "Can't read mmap buffer!\n" << std::endl;
+        else
+            *os_out << "TS : " << std::hex << val << std::endl;
+    }
+
+    if(type & PERF_SAMPLE_CPU)
+    {
+        struct { uint32_t cpu, reserved; } cpu;    
+        ret |= read_mmap_buffer((char*)&cpu,sizeof(cpu));
+        if(ret)
+            *os_err << "Can't read mmap buffer!\n" << std::endl;
+        else
+            *os_out << "CPU : " << std::dec << cpu.cpu << std::endl;
+    }
+
+    if(type & PERF_SAMPLE_CALLCHAIN)
+    {
+        ret |= read_mmap_buffer((char*)&val,sizeof(uint64_t));
+
+        uint64_t *ips = new uint64_t[val];
+
+        ret |= read_mmap_buffer((char*)ips,val*sizeof(uint64_t));
+
+        *os_out << " **** CALLCHAIN **** " << std::endl;
+
+        for(int i=0; i<val; i++)
+        {
+            if(avail_line_num)
+            {
+                std::vector<Dyninst::SymtabAPI::Statement*> stats;
+                ret = symtab_obj->getSourceLines(stats,ips[i]);
+                if(ret)
+                {
+                    *os_out << "Source : " << stats[0]->getFile() << std::endl;
+                    *os_out << "Line : " << stats[0]->getLine() << std::endl;
+                }
+            }
+        }
+    }
+
+    collected_samples++;
 
     return ret;
 }
@@ -234,4 +376,7 @@ void perf_event_prof::process_freq_sample()
 
 	fprintf(options.output_file,"%s value=%"PRIu64" event ID=%"PRIu64"\n", mode ? "Throttled" : "Unthrottled", thr.id, thr.stream_id);
     */
+
+    //*os_err << "thr.id : " << thr.id << std::endl;
+    //*os_err << "thr.stream_id : " << thr.stream_id << std::endl;
 }

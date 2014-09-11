@@ -11,6 +11,10 @@
 
 #include <iostream>
 #include <iomanip>
+#include <vector>
+
+#include <Symtab.h>
+#include <LineInformation.h>
 
 static void *sample_handler_fn(void *args);
 
@@ -22,15 +26,22 @@ public:
     perf_event_prof();
     ~perf_event_prof();
 
+    int prepare();
+
     int begin_prof();
     void end_prof();
 
-    void set_outputstream(std::ostream *os) { this->os_out = os; }
-    void set_errorstream(std::ostream *os) { this->os_err = os; }
+    void set_period(int p) { this->sample_period = p; }
+
+    void set_os_out(std::ostream *os) { this->os_out = os; }
+    void set_os_err(std::ostream *os) { this->os_err = os; }
 
     void readout();
 
 private:
+    int prepare_perf();
+    int prepare_symtab();
+
     int init_sample_handler();
     int read_single_sample();
     int read_all_samples();
@@ -45,6 +56,9 @@ private:
 private:
     int ret;
     int ready;
+    int stop;
+
+    int avail_line_num;
 
     int fd;
 
@@ -65,4 +79,6 @@ private:
     std::ostream *os_out;
     std::ostream *os_err;
     pthread_t sample_handler_thr;
+
+    Dyninst::SymtabAPI::Symtab *symtab_obj;
 };

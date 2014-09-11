@@ -1,3 +1,6 @@
+#include <iostream>
+#include <fstream>
+
 #include "perfsmpl.h"
 
 void do_werk()
@@ -13,9 +16,13 @@ void do_werk()
 int main(int argc, char **argv)
 {
     perf_event_prof mprof;
-    mprof.set_outputstream(&std::cout);
+
+    mprof.set_period(1);
+    mprof.prepare();
+
     mprof.begin_prof();
     do_werk();
     mprof.end_prof();
+
     mprof.readout();
 }
