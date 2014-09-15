@@ -1,11 +1,44 @@
 #include "perfsmpl.h"
 
-static void *sample_handler_fn(void *args)
+static void *sample_reader_fn(void *args)
 {
     perf_event_prof *pep = (perf_event_prof*)args;
 
     while(!pep->stop) {
         pep->read_all_samples();
+    }
+}
+
+void perf_event_sample::deriveDebugInfo()
+{
+    Dyninst::SymtabAPI::Symtab *sym = parent->symtab_obj;
+
+    // Line Info
+    std::vector<Dyninst::SymtabAPI::Statement*> stat;
+    sym->getSourceLines(stat,ip);
+
+    for(int i=0; i<stat.size(); i++)
+    {
+        struct LineTuple lt;
+        lt.srcFile = stat[i]->getFile();
+        lt.srcLine = stat[i]->getLine();
+        lineInfo.push_back(lt);
+    }
+
+    // Callchain info
+    callchainLineInfo.resize(nr);
+    for(int c=0; c<nr; c++)
+    {
+        std::vector<Dyninst::SymtabAPI::Statement*> stat;
+        sym->getSourceLines(stat,ips[c]);
+
+        for(int i=0; i<stat.size(); i++)
+        {
+            struct LineTuple lt;
+            lt.srcFile = stat[i]->getFile();
+            lt.srcLine = stat[i]->getLine();
+            callchainLineInfo[c].push_back(lt);
+        }
     }
 }
 
@@ -25,6 +58,10 @@ perf_event_prof::perf_event_prof()
     ready = 0;
     stop = 0;
 
+    avail_line_num = 0;
+    debug_info = 1;
+    custom_handler = 0;
+
     collected_samples = 0;
     lost_samples = 0;
 
@@ -42,8 +79,8 @@ int perf_event_prof::prepare_perf()
     memset(&pe, 0, sizeof(struct perf_event_attr));
     pe.type = PERF_TYPE_HARDWARE;
     pe.size = sizeof(struct perf_event_attr);
-    pe.config = PERF_COUNT_HW_REF_CPU_CYCLES;
-    pe.sample_type = PERF_SAMPLE_CALLCHAIN;
+    pe.config = PERF_COUNT_HW_INSTRUCTIONS;
+    pe.sample_type = PERF_SAMPLE_IP | PERF_SAMPLE_CALLCHAIN;
     pe.sample_period = sample_period;
     pe.mmap = 1;
     pe.mmap_data = 1;
@@ -92,9 +129,9 @@ int perf_event_prof::prepare()
     return ret;
 }
 
-int perf_event_prof::init_sample_handler()
+int perf_event_prof::init_sample_reader()
 {
-    return pthread_create(&sample_handler_thr,NULL,sample_handler_fn,(void*)this);
+    return pthread_create(&sample_reader_thr,NULL,sample_reader_fn,(void*)this);
 }
 
 int perf_event_prof::begin_prof()
@@ -106,7 +143,7 @@ int perf_event_prof::begin_prof()
         return -1;
     }
 
-    ret = init_sample_handler();
+    ret = init_sample_reader();
 
     if(ret)
     {
@@ -124,7 +161,7 @@ int perf_event_prof::begin_prof()
 void perf_event_prof::end_prof()
 {
     stop = 1;
-    pthread_join(sample_handler_thr,NULL);
+    pthread_join(sample_reader_thr,NULL);
 
     read_all_samples(); // flush out remaining samples
 
@@ -142,43 +179,15 @@ void perf_event_prof::readout()
     os_out->flush();
 }
 
-int perf_event_prof::read_single_sample()
+int perf_event_prof::process_single_sample()
 {
     uint64_t val;
     uint64_t type = pe.sample_type;
 
+    perf_event_sample *sample = new perf_event_sample();
+    sample->parent = this;
+
     ret = 0;
-
-    //struct {
-    //    struct perf_event_header header;
-    //    u64   sample_id;  /* if PERF_SAMPLE_IDENTIFIER */
-    //    u64   ip;         /* if PERF_SAMPLE_IP */
-    //    u32   pid, tid;   /* if PERF_SAMPLE_TID */
-    //    u64   time;       /* if PERF_SAMPLE_TIME */
-    //    u64   addr;       /* if PERF_SAMPLE_ADDR */
-    //    u64   id;         /* if PERF_SAMPLE_ID */
-    //    u64   stream_id;  /* if PERF_SAMPLE_STREAM_ID */
-    //    u32   cpu, res;   /* if PERF_SAMPLE_CPU */
-    //    u64   period;     /* if PERF_SAMPLE_PERIOD */
-    //    struct read_format v; /* if PERF_SAMPLE_READ */
-    //    u64   nr;         /* if PERF_SAMPLE_CALLCHAIN */
-    //    u64   ips[nr];    /* if PERF_SAMPLE_CALLCHAIN */
-    //    u32   size;       /* if PERF_SAMPLE_RAW */
-    //    char  data[size]; /* if PERF_SAMPLE_RAW */
-    //    u64   bnr;        /* if PERF_SAMPLE_BRANCH_STACK */
-    //    struct perf_branch_entry lbr[bnr];
-    //                    /* if PERF_SAMPLE_BRANCH_STACK */
-    //    u64   abi;        /* if PERF_SAMPLE_REGS_USER */
-    //    u64   regs[weight(mask)];
-    //                    /* if PERF_SAMPLE_REGS_USER */
-    //    u64   size;       /* if PERF_SAMPLE_STACK_USER */
-    //    char  data[size]; /* if PERF_SAMPLE_STACK_USER */
-    //    u64   dyn_size;   /* if PERF_SAMPLE_STACK_USER */
-    //    u64   weight;     /* if PERF_SAMPLE_WEIGHT */
-    //    u64   data_src;   /* if PERF_SAMPLE_DATA_SRC */
-    //    u64   transaction;/* if PERF_SAMPLE_TRANSACTION */
-    //};
-
 
     if(type & PERF_SAMPLE_IP)
     {
@@ -187,18 +196,7 @@ int perf_event_prof::read_single_sample()
             *os_err << "Can't read mmap buffer!\n" << std::endl;
         else
         {
-            //*os_out << "IP : " << std::hex << val << std::endl;
-
-            if(avail_line_num)
-            {
-                std::vector<Dyninst::SymtabAPI::Statement*> stats;
-                ret = symtab_obj->getSourceLines(stats,val);
-                if(ret)
-                {
-                    *os_out << "Source : " << stats[0]->getFile() << std::endl;
-                    *os_out << "Line : " << stats[0]->getLine() << std::endl;
-                }
-            }
+            sample->ip = val;
         }
 
     }
@@ -211,8 +209,8 @@ int perf_event_prof::read_single_sample()
             *os_err << "Can't read mmap buffer!\n" << std::endl;
         else
         {
-            *os_out << "PID : " << std::dec << pid.pid << std::endl;
-            *os_out << "TID : " << std::dec << pid.tid << std::endl;
+            sample->pid = pid.pid;
+            sample->tid = pid.tid;
         }
     }
 
@@ -222,7 +220,9 @@ int perf_event_prof::read_single_sample()
         if(ret)
             *os_err << "Can't read mmap buffer!\n" << std::endl;
         else
-            *os_out << "TS : " << std::hex << val << std::endl;
+        {
+            sample->time = val;
+        }
     }
 
     if(type & PERF_SAMPLE_CPU)
@@ -232,7 +232,9 @@ int perf_event_prof::read_single_sample()
         if(ret)
             *os_err << "Can't read mmap buffer!\n" << std::endl;
         else
-            *os_out << "CPU : " << std::dec << cpu.cpu << std::endl;
+        {
+            sample->cpu = cpu.cpu;
+        }
     }
 
     if(type & PERF_SAMPLE_CALLCHAIN)
@@ -243,24 +245,24 @@ int perf_event_prof::read_single_sample()
 
         ret |= read_mmap_buffer((char*)ips,val*sizeof(uint64_t));
 
-        *os_out << " **** CALLCHAIN **** " << std::endl;
-
         for(int i=0; i<val; i++)
         {
-            if(avail_line_num)
-            {
-                std::vector<Dyninst::SymtabAPI::Statement*> stats;
-                ret = symtab_obj->getSourceLines(stats,ips[i]);
-                if(ret)
-                {
-                    *os_out << "Source : " << stats[0]->getFile() << std::endl;
-                    *os_out << "Line : " << stats[0]->getLine() << std::endl;
-                }
-            }
+            sample->nr = val;
+            sample->ips = ips;
         }
     }
 
     collected_samples++;
+
+    if(debug_info)
+    {
+        sample->deriveDebugInfo();
+    }
+
+    if(custom_handler)
+    {
+        handler(sample,NULL);
+    }
 
     return ret;
 }
@@ -277,7 +279,7 @@ int perf_event_prof::read_all_samples()
 
         switch(ehdr.type) {
             case PERF_RECORD_SAMPLE:
-                read_single_sample();
+                process_single_sample();
                 break;
             case PERF_RECORD_EXIT:
                 process_exit_sample();
@@ -380,3 +382,4 @@ void perf_event_prof::process_freq_sample()
     //*os_err << "thr.id : " << thr.id << std::endl;
     //*os_err << "thr.stream_id : " << thr.stream_id << std::endl;
 }
+
