@@ -19,6 +19,12 @@ class perf_event_sample;
 typedef void (*sample_handler_fn_t)(perf_event_sample *sample, void *args);
 static void* sample_reader_fn(void *args);
 
+enum sample_mode
+{
+    SMPL_MEMORY,
+    SMPL_INSTRUCTIONS
+};
+
 class perf_event_prof
 {
     friend void *sample_reader_fn(void *args);
@@ -32,17 +38,17 @@ public:
 
     int begin_prof();
     void end_prof();
+    
+    int set_sample_mode(sample_mode m) { this->mode = m; }
 
     void set_handler(sample_handler_fn_t h) { this->handler = h; custom_handler = 1; }
 
     inline bool has_attribute(int attr) { return this->pe.sample_type & attr; }
 
 private:
-    int prepare_perf();
-
+    void init_attr();
+    int init_perf();
     int init_sample_reader();
-
-    size_t sample_size();
 
     int process_sample_buffer();
     int process_single_sample(struct perf_event_mmap_page *mmap_buf);
@@ -59,6 +65,8 @@ private:
     int ret;
     int ready;
     int stop;
+
+    int mode;
     int custom_handler;
 
     // perf_event variables

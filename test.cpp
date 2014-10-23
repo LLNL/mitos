@@ -10,8 +10,15 @@ void profile_handler(perf_event_sample *sample, void *args)
     // TODO: try getting regs
     std::cout << "\tIP:" << sample->ip;
     std::cout << "\tADDR:" << sample->addr;
+    std::cout << "\tTIME:" << sample->addr;
     std::cout << "\tWEIGHT:" << sample->weight;
     std::cout << "\tDATA_SRC:" << sample->data_src;
+    std::cout << std::endl;
+    std::cout << "\tCALLCHAIN:" << std::endl;
+    for(int i=0; i<sample->nr; i++)
+    {
+        std::cout << sample->ips[i] << "  ->  ";
+    }
     std::cout << std::endl;
 }
 
@@ -29,6 +36,7 @@ int main(int argc, char **argv)
 {
     perf_event_prof mprof;
 
+    mprof.set_sample_mode(SMPL_MEMORY);
     mprof.set_handler(&profile_handler);
 
     mprof.prepare();

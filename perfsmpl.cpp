@@ -27,17 +27,20 @@ perf_event_prof::perf_event_prof()
 
     collected_samples = 0;
     lost_samples = 0;
+}
 
+perf_event_prof::~perf_event_prof()
+{
+    close(fd);
+    munmap(mmap_buf,mmap_size);
+}
+
+void perf_event_prof::init_attr()
+{
     // event attr
     memset(&pe, 0, sizeof(struct perf_event_attr));
     pe.size = sizeof(struct perf_event_attr);
-    pe.type = PERF_TYPE_RAW;
-    pe.config = 0x1cd;
-    pe.config1 = 3; // ldlat
-    pe.sample_type = PERF_SAMPLE_IP | PERF_SAMPLE_ADDR | PERF_SAMPLE_WEIGHT | PERF_SAMPLE_DATA_SRC;
-    pe.precise_ip = 2;
-    pe.sample_period = 4000;
-    pe.freq = 0;
+
     pe.mmap = 1;
     pe.mmap_data = 1;
     pe.comm = 1;
@@ -49,16 +52,51 @@ perf_event_prof::perf_event_prof()
     pe.exclude_host = 0;
     pe.exclude_guest = 1;
     pe.pinned = 0;
+    pe.sample_id_all = 1;
+
+    pe.sample_period = 4000;
+    pe.freq = 0;
+
+    if(mode == SMPL_MEMORY)
+    {
+        // TODO: look this up in libpfm
+        pe.type = PERF_TYPE_RAW;
+        pe.config = 0x5101cd;
+        pe.config1 = 3; // ldlat
+        pe.sample_type = 
+            PERF_SAMPLE_IP | 
+            PERF_SAMPLE_CALLCHAIN | 
+            PERF_SAMPLE_ID | 
+            PERF_SAMPLE_STREAM_ID | 
+            PERF_SAMPLE_TIME | 
+            PERF_SAMPLE_TID | 
+            PERF_SAMPLE_PERIOD | 
+            PERF_SAMPLE_CPU | 
+            PERF_SAMPLE_ADDR | 
+            PERF_SAMPLE_WEIGHT | 
+            PERF_SAMPLE_DATA_SRC;
+        pe.precise_ip = 2;
+    }
+
+    if(mode == SMPL_INSTRUCTIONS)
+    {
+        pe.type = PERF_TYPE_HARDWARE;
+        pe.config = PERF_COUNT_HW_INSTRUCTIONS;
+        pe.sample_type = 
+            PERF_SAMPLE_IP | 
+            PERF_SAMPLE_CALLCHAIN | 
+            PERF_SAMPLE_ID | 
+            PERF_SAMPLE_STREAM_ID | 
+            PERF_SAMPLE_TIME | 
+            PERF_SAMPLE_TID | 
+            PERF_SAMPLE_PERIOD | 
+            PERF_SAMPLE_CPU;
+    }
 }
 
-perf_event_prof::~perf_event_prof()
+int perf_event_prof::init_perf()
 {
-    close(fd);
-    munmap(mmap_buf,mmap_size);
-}
-
-int perf_event_prof::prepare_perf()
-{
+    // Create attr according to sample mode
     // Setup
     fd = syscall(__NR_perf_event_open, &pe,0,-1,-1,0);
 
@@ -87,7 +125,9 @@ int perf_event_prof::prepare_perf()
 
 int perf_event_prof::prepare()
 {
-    ret = prepare_perf();
+    init_attr();
+
+    ret = init_perf();
 
     if(ret != 0)
     {
@@ -140,34 +180,9 @@ void perf_event_prof::end_prof()
     process_sample_buffer(); // flush out remaining samples
 }
 
-size_t perf_event_prof::sample_size()
-{
-    size_t sz = 0;
-    if(has_attribute(PERF_SAMPLE_IP))
-        sz += sizeof(uint64_t);
-    if(has_attribute(PERF_SAMPLE_TID))
-        sz += sizeof(uint64_t);
-    if(has_attribute(PERF_SAMPLE_TIME))
-        sz += sizeof(uint64_t);
-    if(has_attribute(PERF_SAMPLE_ADDR))
-        sz += sizeof(uint64_t);
-    if(has_attribute(PERF_SAMPLE_CPU))
-        sz += sizeof(uint64_t);
-    if(has_attribute(PERF_SAMPLE_PERIOD))
-        sz += sizeof(uint64_t);
-    if(has_attribute(PERF_SAMPLE_WEIGHT))
-        sz += sizeof(uint64_t);
-    if(has_attribute(PERF_SAMPLE_DATA_SRC))
-        sz += sizeof(uint64_t);
-
-    return sz;
-}
-
 int perf_event_prof::process_single_sample(struct perf_event_mmap_page *mmap_buf)
 {
     // Read a sample from the mmap buf
-    char *sample_data = (char*)malloc(sample_size());
-    ret = read_mmap_buffer(mmap_buf,sample_data,sample_size());
     if(ret)
     {
         std::cerr << "Can't read mmap buffer!\n" << std::endl;
@@ -182,53 +197,61 @@ int perf_event_prof::process_single_sample(struct perf_event_mmap_page *mmap_buf
 
     if(has_attribute(PERF_SAMPLE_IP))
     {
-        memcpy(&sample->ip,sample_data,sizeof(uint64_t));
-        sample_data += sizeof(uint64_t);
+        read_mmap_buffer(mmap_buf,(char*)&sample->ip,sizeof(uint64_t));
     }
+    
     if(has_attribute(PERF_SAMPLE_TID))
     {
-        memcpy(&sample->pid,sample_data,sizeof(uint32_t));
-        sample_data += sizeof(uint32_t);
-        memcpy(&sample->tid,sample_data,sizeof(uint32_t));
-        sample_data += sizeof(uint32_t);
+        read_mmap_buffer(mmap_buf,(char*)&sample->pid,sizeof(uint32_t));
+        read_mmap_buffer(mmap_buf,(char*)&sample->tid,sizeof(uint32_t));
     }
 
     if(has_attribute(PERF_SAMPLE_TIME))
     {
-        memcpy(&sample->time,sample_data,sizeof(uint64_t));
-        sample_data += sizeof(uint64_t);
+        read_mmap_buffer(mmap_buf,(char*)&sample->time,sizeof(uint64_t));
     }
 
     if(has_attribute(PERF_SAMPLE_ADDR))
     {
-        memcpy(&sample->addr,sample_data,sizeof(uint64_t));
-        sample_data += sizeof(uint64_t);
+        read_mmap_buffer(mmap_buf,(char*)&sample->addr,sizeof(uint64_t));
+    }
+
+    if(has_attribute(PERF_SAMPLE_ID))
+    {
+        read_mmap_buffer(mmap_buf,(char*)&sample->id,sizeof(uint64_t));
+    }
+
+    if(has_attribute(PERF_SAMPLE_STREAM_ID))
+    {
+        read_mmap_buffer(mmap_buf,(char*)&sample->stream_id,sizeof(uint64_t));
     }
 
     if(has_attribute(PERF_SAMPLE_CPU))
     {
-        memcpy(&sample->cpu,sample_data,sizeof(uint32_t));
-        sample_data += sizeof(uint32_t);
-        memcpy(&sample->res,sample_data,sizeof(uint32_t));
-        sample_data += sizeof(uint32_t);
+        read_mmap_buffer(mmap_buf,(char*)&sample->cpu,sizeof(uint32_t));
+        read_mmap_buffer(mmap_buf,(char*)&sample->res,sizeof(uint32_t));
     }
 
     if(has_attribute(PERF_SAMPLE_PERIOD))
     {
-        memcpy(&sample->period,sample_data,sizeof(uint64_t));
-        sample_data += sizeof(uint64_t);
+        read_mmap_buffer(mmap_buf,(char*)&sample->period,sizeof(uint64_t));
+    }
+
+    if(has_attribute(PERF_SAMPLE_CALLCHAIN))
+    {
+        read_mmap_buffer(mmap_buf,(char*)&sample->nr,sizeof(uint64_t));
+        sample->ips = (uint64_t*)malloc(sample->nr*sizeof(uint64_t));
+        read_mmap_buffer(mmap_buf,(char*)sample->ips,sample->nr*sizeof(uint64_t));
     }
 
     if(has_attribute(PERF_SAMPLE_WEIGHT))
     {
-        memcpy(&sample->weight,sample_data,sizeof(uint64_t));
-        sample_data += sizeof(uint64_t);
+        read_mmap_buffer(mmap_buf,(char*)&sample->weight,sizeof(uint64_t));
     }
 
     if(has_attribute(PERF_SAMPLE_DATA_SRC))
     {
-        memcpy(&sample->data_src,sample_data,sizeof(uint64_t));
-        sample_data += sizeof(uint64_t);
+        read_mmap_buffer(mmap_buf,(char*)&sample->data_src,sizeof(uint64_t));
     }
 
     if(custom_handler)
