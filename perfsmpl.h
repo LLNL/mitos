@@ -13,19 +13,76 @@
 #include <iomanip>
 #include <vector>
 
-#include <Symtab.h>
-#include <LineInformation.h>
-
 class perf_event_prof;
 class perf_event_sample;
 
 typedef void (*sample_handler_fn_t)(perf_event_sample *sample, void *args);
-
 static void* sample_reader_fn(void *args);
 
-struct LineTuple {
-    std::string srcFile;
-    int srcLine;
+class perf_event_prof
+{
+    friend void *sample_reader_fn(void *args);
+    friend class perf_event_sample;
+
+public:
+    perf_event_prof();
+    ~perf_event_prof();
+
+    int prepare();
+
+    int begin_prof();
+    void end_prof();
+
+    void set_handler(sample_handler_fn_t h) { this->handler = h; custom_handler = 1; }
+
+    inline bool has_attribute(int attr) { return this->pe.sample_type & attr; }
+
+private:
+    int prepare_perf();
+
+    int init_sample_reader();
+
+    size_t sample_size();
+
+    int process_sample_buffer();
+    int process_single_sample(struct perf_event_mmap_page *mmap_buf);
+
+    int read_mmap_buffer(struct perf_event_mmap_page *mmap_buf, char *out, size_t sz);
+    void skip_mmap_buffer(struct perf_event_mmap_page *mmap_buf, size_t sz);
+    
+    void process_lost_sample(struct perf_event_mmap_page *mmap_buf);
+    void process_freq_sample(struct perf_event_mmap_page *mmap_buf);
+    void process_exit_sample(struct perf_event_mmap_page *mmap_buf);
+
+private:
+    // status
+    int ret;
+    int ready;
+    int stop;
+    int custom_handler;
+
+    // perf_event variables
+    int fd;
+    struct perf_event_mmap_page *mmap_buf;
+    uint64_t counter_value;
+
+    // event_attr variables
+    struct perf_event_attr pe;
+
+    uint64_t sample_period;
+    uint64_t sample_type;
+
+    size_t mmap_pages;
+    size_t mmap_size;
+    size_t pgsz;
+    size_t pgmsk;
+
+    uint64_t collected_samples;
+    uint64_t lost_samples;
+
+    pthread_t sample_reader_thr;
+
+    sample_handler_fn_t handler;
 };
 
 class perf_event_sample {
@@ -33,7 +90,8 @@ class perf_event_sample {
     friend class perf_event_prof;
 
 public:
-    void deriveDebugInfo();
+    perf_event_sample() { memset(this,0,sizeof(class perf_event_sample)); }
+    inline bool has_attribute(int attr) { return parent->has_attribute(attr); }
 
 private:
     perf_event_prof *parent;
@@ -66,84 +124,5 @@ public:
     uint64_t   weight;     /* if PERF_SAMPLE_WEIGHT */
     uint64_t   data_src;   /* if PERF_SAMPLE_DATA_SRC */
     uint64_t   transaction;/* if PERF_SAMPLE_TRANSACTION */
-
-    // Derived debug info
-
-    std::vector<LineTuple> lineInfo;
-    std::vector<std::vector<LineTuple> > callchainLineInfo;
-    std::string dataSymbol;
-    double refWeight; // weight normalized to time
-    int socket;
 };
 
-class perf_event_prof
-{
-    friend void *sample_reader_fn(void *args);
-    friend class perf_event_sample;
-
-public:
-    perf_event_prof();
-    ~perf_event_prof();
-
-    int prepare();
-
-    int begin_prof();
-    void end_prof();
-
-    void set_period(int p) { this->sample_period = p; }
-
-    void set_os_out(std::ostream *os) { this->os_out = os; }
-    void set_os_err(std::ostream *os) { this->os_err = os; }
-
-    void set_handler(sample_handler_fn_t h) { this->handler = h; custom_handler = 1; }
-
-    void readout();
-
-private:
-    int prepare_perf();
-    int prepare_symtab();
-
-    int init_sample_reader();
-    int process_single_sample();
-    int read_all_samples();
-
-    int read_mmap_buffer(char *out, size_t sz);
-    void skip_mmap_buffer(size_t sz);
-    
-    void process_lost_sample();
-    void process_freq_sample();
-    void process_exit_sample();
-
-private:
-    int ret;
-    int ready;
-    int stop;
-
-    int avail_line_num;
-    int debug_info;
-    int custom_handler;
-
-    int fd;
-
-    struct perf_event_attr pe;
-    struct perf_event_mmap_page *mmap_buf;
-
-    uint64_t sample_period;
-    uint64_t counter_value;
-
-    uint64_t collected_samples;
-    uint64_t lost_samples;
-
-    size_t mmap_pages;
-    size_t mmap_size;
-    size_t pgsz;
-    size_t pgmsk;
-
-    std::ostream *os_out;
-    std::ostream *os_err;
-    pthread_t sample_reader_thr;
-
-    Dyninst::SymtabAPI::Symtab *symtab_obj;
-
-    sample_handler_fn_t handler;
-};

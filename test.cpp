@@ -1,58 +1,40 @@
 #include <iostream>
 #include <fstream>
-#include <map>
+#include <vector>
+#include <algorithm>
 
 #include "perfsmpl.h"
 
-std::map<struct LineTuple,int> profile;
-
-bool operator<(const LineTuple &l,const LineTuple &r) {
-    return 0;
-}
-
-void prof_handler(perf_event_sample *sample, void *args)
+void profile_handler(perf_event_sample *sample, void *args)
 {
-    for(int c=0; c<sample->callchainLineInfo.size(); c++)
-    {
-        for(int i=0; i<sample->callchainLineInfo[c].size(); i++)
-        {
-            struct LineTuple lt = sample->callchainLineInfo[c][i];
-
-            if(profile.count(lt))
-                profile[lt] = profile[lt]+1;
-            else
-                profile[lt] = 0;
-        }
-    }
+    // TODO: try getting regs
+    std::cout << "\tIP:" << sample->ip;
+    std::cout << "\tADDR:" << sample->addr;
+    std::cout << "\tWEIGHT:" << sample->weight;
+    std::cout << "\tDATA_SRC:" << sample->data_src;
+    std::cout << std::endl;
 }
 
 void do_werk()
 {
     double v = 241209092.548394035;
     for(int i=0; i<512; i++)
-        for(int j=0; j<512; j++)
-            for(int k=0; k<512; k++)
+        for(int j=0; j<1024; j++)
+            for(int k=0; k<1024; k++)
                 v = v*v;
-    printf("v : %f\n",v);
+    std::cout << v << std::endl;
 }
 
 int main(int argc, char **argv)
 {
     perf_event_prof mprof;
 
-    mprof.set_period(1);
-    mprof.set_handler(&prof_handler);
+    mprof.set_handler(&profile_handler);
+
     mprof.prepare();
 
+    mprof.set_handler(&profile_handler);
     mprof.begin_prof();
     do_werk();
     mprof.end_prof();
-
-    mprof.readout();
-
-    std::map<struct LineTuple,int>::iterator it;
-    for(it = profile.begin(); it != profile.end(); it++)
-    {
-        std::cout << it->first.srcFile << " : " << it->first.srcLine << " : " << it->second << std::endl;
-    }
 }
