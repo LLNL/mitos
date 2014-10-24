@@ -12,8 +12,11 @@ endif()
 # pthreads
 find_package(Threads)
 
-add_library(perfsmpl SHARED perfsmpl.cpp)
-add_library(perfsmpl_static STATIC perfsmpl.cpp)
+set(SRC_FILES perfsmpl.cpp dbgmem.cpp)
+set(HDR_FILES perfsmpl.h dbgmem.h)
+
+add_library(perfsmpl SHARED ${SRC_FILES})
+add_library(perfsmpl_static STATIC ${SRC_FILES})
 
 add_executable(test test.cpp)
 

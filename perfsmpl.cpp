@@ -2,7 +2,7 @@
 
 static void *sample_reader_fn(void *args)
 {
-    perf_event_prof *pep = (perf_event_prof*)args;
+    perfsmpl *pep = (perfsmpl*)args;
 
     while(!pep->stop) 
     {
@@ -10,7 +10,7 @@ static void *sample_reader_fn(void *args)
     }
 }
 
-perf_event_prof::perf_event_prof()
+perfsmpl::perfsmpl()
 {
     // Defaults
     mmap_pages = 32;
@@ -29,13 +29,13 @@ perf_event_prof::perf_event_prof()
     lost_samples = 0;
 }
 
-perf_event_prof::~perf_event_prof()
+perfsmpl::~perfsmpl()
 {
     close(fd);
     munmap(mmap_buf,mmap_size);
 }
 
-void perf_event_prof::init_attr()
+void perfsmpl::init_attr()
 {
     // event attr
     memset(&pe, 0, sizeof(struct perf_event_attr));
@@ -94,7 +94,7 @@ void perf_event_prof::init_attr()
     }
 }
 
-int perf_event_prof::init_perf()
+int perfsmpl::init_perf()
 {
     // Create attr according to sample mode
     // Setup
@@ -123,7 +123,7 @@ int perf_event_prof::init_perf()
     return 0;
 }
 
-int perf_event_prof::prepare()
+int perfsmpl::prepare()
 {
     init_attr();
 
@@ -140,12 +140,12 @@ int perf_event_prof::prepare()
     return 0;
 }
 
-int perf_event_prof::init_sample_reader()
+int perfsmpl::init_sample_reader()
 {
     return pthread_create(&sample_reader_thr,NULL,sample_reader_fn,(void*)this);
 }
 
-int perf_event_prof::begin_prof()
+int perfsmpl::begin_sampler()
 {
     if(!ready)
     {
@@ -169,7 +169,7 @@ int perf_event_prof::begin_prof()
     return ret;
 }
 
-void perf_event_prof::end_prof()
+void perfsmpl::end_sampler()
 {
     stop = 1;
     pthread_join(sample_reader_thr,NULL);
@@ -180,7 +180,7 @@ void perf_event_prof::end_prof()
     process_sample_buffer(); // flush out remaining samples
 }
 
-int perf_event_prof::process_single_sample(struct perf_event_mmap_page *mmap_buf)
+int perfsmpl::process_single_sample(struct perf_event_mmap_page *mmap_buf)
 {
     // Read a sample from the mmap buf
     if(ret)
@@ -262,7 +262,7 @@ int perf_event_prof::process_single_sample(struct perf_event_mmap_page *mmap_buf
     return ret;
 }
 
-int perf_event_prof::process_sample_buffer()
+int perfsmpl::process_sample_buffer()
 {
     struct perf_event_header ehdr;
     int ret;
@@ -296,7 +296,7 @@ int perf_event_prof::process_sample_buffer()
     }
 }
 
-int perf_event_prof::read_mmap_buffer(struct perf_event_mmap_page *mmap_buf, char *out, size_t sz)
+int perfsmpl::read_mmap_buffer(struct perf_event_mmap_page *mmap_buf, char *out, size_t sz)
 {
 	char *data;
 	unsigned long tail;
@@ -317,7 +317,7 @@ int perf_event_prof::read_mmap_buffer(struct perf_event_mmap_page *mmap_buf, cha
 	return 0;
 }
 
-void perf_event_prof::skip_mmap_buffer(struct perf_event_mmap_page *mmap_buf, size_t sz)
+void perfsmpl::skip_mmap_buffer(struct perf_event_mmap_page *mmap_buf, size_t sz)
 {
     if ((mmap_buf->data_tail + sz) > mmap_buf->data_head)
         sz = mmap_buf->data_head - mmap_buf->data_tail;
@@ -325,7 +325,7 @@ void perf_event_prof::skip_mmap_buffer(struct perf_event_mmap_page *mmap_buf, si
     mmap_buf->data_tail += sz;
 }
 
-void perf_event_prof::process_lost_sample(struct perf_event_mmap_page *mmap_buf)
+void perfsmpl::process_lost_sample(struct perf_event_mmap_page *mmap_buf)
 {
 	struct { uint64_t id, lost; } lost;
 	const char *str;
@@ -335,7 +335,7 @@ void perf_event_prof::process_lost_sample(struct perf_event_mmap_page *mmap_buf)
 	lost_samples += lost.lost;
 }
 
-void perf_event_prof::process_exit_sample(struct perf_event_mmap_page *mmap_buf)
+void perfsmpl::process_exit_sample(struct perf_event_mmap_page *mmap_buf)
 {
 	struct { pid_t pid, ppid, tid, ptid; } grp;
 	int ret;
@@ -343,7 +343,7 @@ void perf_event_prof::process_exit_sample(struct perf_event_mmap_page *mmap_buf)
 	ret = read_mmap_buffer(mmap_buf,(char*)&grp,sizeof(grp));
 }
 
-void perf_event_prof::process_freq_sample(struct perf_event_mmap_page *mmap_buf)
+void perfsmpl::process_freq_sample(struct perf_event_mmap_page *mmap_buf)
 {
 	struct { uint64_t time, id, stream_id; } thr;
 	int ret;

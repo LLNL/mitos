@@ -3,46 +3,60 @@
 #include <vector>
 #include <algorithm>
 
-#include "perfsmpl.h"
+#include "SAMP.h"
 
-void profile_handler(perf_event_sample *sample, void *args)
+perfsmpl sampler;
+dbgmem memsyms;
+
+int N = 512;
+
+void sample_handler(perf_event_sample *sample, void *args)
 {
-    // TODO: try getting regs
-    std::cout << "\tIP:" << sample->ip;
-    std::cout << "\tADDR:" << sample->addr;
-    std::cout << "\tTIME:" << sample->addr;
-    std::cout << "\tWEIGHT:" << sample->weight;
-    std::cout << "\tDATA_SRC:" << sample->data_src;
-    std::cout << std::endl;
-    std::cout << "\tCALLCHAIN:" << std::endl;
-    for(int i=0; i<sample->nr; i++)
+    mem_symbol *sym = memsyms.find_symbol(sample->addr);
+
+    if(sym != NULL)
     {
-        std::cout << sample->ips[i] << "  ->  ";
+        size_t index = sym->get_index(sample->addr);
+        std::cout << "SYM: " << sym->get_name() << '\t';
+        std::cout << "INDEX: " << index << '\t';
+        std::cout << "X: " << index % N << '\t';
+        std::cout << "Y: " << index / N << '\t';
+        std::cout << std::endl;
     }
-    std::cout << std::endl;
 }
 
-void do_werk()
+void workit()
 {
-    double v = 241209092.548394035;
-    for(int i=0; i<512; i++)
-        for(int j=0; j<1024; j++)
-            for(int k=0; k<1024; k++)
-                v = v*v;
-    std::cout << v << std::endl;
+    int i,j,k;
+
+    double *a = (double*)malloc(sizeof(double)*N*N);
+    double *b = (double*)malloc(sizeof(double)*N*N);
+    double *c = (double*)malloc(sizeof(double)*N*N);
+
+    memsyms.add_symbol("a",a,sizeof(double),N*N);
+    memsyms.add_symbol("b",b,sizeof(double),N*N);
+    memsyms.add_symbol("c",c,sizeof(double),N*N);
+
+    for(i=0; i<N; ++i)
+        for(j=0; j<N; ++j)
+            c[i*N+j] = 0;
+
+    for(i=0; i<N; ++i)
+        for(j=0; j<N; ++j)
+            for(k=0; k<N; ++k)
+                c[i*N+j] += a[i*N+k] * b[k*N+j];
+
 }
 
 int main(int argc, char **argv)
 {
-    perf_event_prof mprof;
+    sampler.set_sample_mode(SMPL_MEMORY);
+    sampler.set_handler(&sample_handler);
 
-    mprof.set_sample_mode(SMPL_MEMORY);
-    mprof.set_handler(&profile_handler);
+    sampler.prepare();
 
-    mprof.prepare();
-
-    mprof.set_handler(&profile_handler);
-    mprof.begin_prof();
-    do_werk();
-    mprof.end_prof();
+    sampler.set_handler(&sample_handler);
+    sampler.begin_sampler();
+    workit();
+    sampler.end_sampler();
 }

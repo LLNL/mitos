@@ -13,7 +13,7 @@
 #include <iomanip>
 #include <vector>
 
-class perf_event_prof;
+class perfsmpl;
 class perf_event_sample;
 
 typedef void (*sample_handler_fn_t)(perf_event_sample *sample, void *args);
@@ -25,19 +25,19 @@ enum sample_mode
     SMPL_INSTRUCTIONS
 };
 
-class perf_event_prof
+class perfsmpl
 {
     friend void *sample_reader_fn(void *args);
     friend class perf_event_sample;
 
 public:
-    perf_event_prof();
-    ~perf_event_prof();
+    perfsmpl();
+    ~perfsmpl();
 
     int prepare();
 
-    int begin_prof();
-    void end_prof();
+    int begin_sampler();
+    void end_sampler();
     
     int set_sample_mode(sample_mode m) { this->mode = m; }
 
@@ -95,14 +95,14 @@ private:
 
 class perf_event_sample {
 
-    friend class perf_event_prof;
+    friend class perfsmpl;
 
 public:
     perf_event_sample() { memset(this,0,sizeof(class perf_event_sample)); }
     inline bool has_attribute(int attr) { return parent->has_attribute(attr); }
 
 private:
-    perf_event_prof *parent;
+    perfsmpl *parent;
 
 public:
     // Raw perf_event sample data
