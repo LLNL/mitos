@@ -55,8 +55,9 @@ class dbgmem
         dbgmem();
         ~dbgmem();
 
+        void add_symbol(mem_symbol m);
         void add_symbol(std::string n, void *a, size_t s, size_t l);
-        void add_symbol(std::string n, uint64_t a, size_t s, size_t l);
+        void add_symbol_vec(std::vector<mem_symbol> &v);
 
         mem_symbol* find_symbol(uint64_t addr) { return syms.find_container(addr); }
 

@@ -1,25 +1,30 @@
 #include "dbgmem.h"
 
-dbgmem::dbgmem()
+mem_symbol::mem_symbol()
 {
 
 }
 
-dbgmem::~dbgmem()
+mem_symbol::mem_symbol(std::string n, uint64_t a, size_t s, size_t l)
+    :
+    name(n),
+    addr(a),
+    sz(s),
+    len(l)
 {
 
 }
 
-void dbgmem::add_symbol(std::string n, void *a, size_t s, size_t l)
+mem_symbol::~mem_symbol()
 {
-    uint64_t addr = (uint64_t)a;
-    syms.insert(mem_symbol(n,addr,s,l));
+
 }
 
-void dbgmem::add_symbol(std::string n, uint64_t a, size_t s, size_t l)
+bool mem_symbol::contains(uint64_t addr)
 {
-    syms.insert(mem_symbol(n,a,s,l));
+    return this->addr <= addr &&  addr < this->addr+sz*len;
 }
+
 
 mem_symbol_splay_tree::mem_symbol_splay_tree()
 {
@@ -65,27 +70,29 @@ mem_symbol_splay_tree::find_container_itr(uint64_t addr)
     return all_mem_symbols.end();
 }
 
-mem_symbol::mem_symbol()
+dbgmem::dbgmem()
 {
 
 }
 
-mem_symbol::mem_symbol(std::string n, uint64_t a, size_t s, size_t l)
-    :
-    name(n),
-    addr(a),
-    sz(s),
-    len(l)
+dbgmem::~dbgmem()
 {
 
 }
 
-mem_symbol::~mem_symbol()
+void dbgmem::add_symbol(mem_symbol m)
 {
-
+    syms.insert(m);
 }
 
-bool mem_symbol::contains(uint64_t addr)
+void dbgmem::add_symbol(std::string n, void *a, size_t s, size_t l)
 {
-    return this->addr <= addr &&  addr < this->addr+sz*len;
+    uint64_t addr = (uint64_t)a;
+    syms.insert(mem_symbol(n,addr,s,l));
+}
+
+void dbgmem::add_symbol_vec(std::vector<mem_symbol> &v)
+{
+    for(int i=0; i<v.size(); ++i)
+        add_symbol(v[i]);
 }

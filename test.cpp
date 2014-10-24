@@ -5,14 +5,15 @@
 
 #include "SAMP.h"
 
-perfsmpl sampler;
-dbgmem memsyms;
-
 int N = 512;
+
+double *a;
+double *b;
+double *c;
 
 void sample_handler(perf_event_sample *sample, void *args)
 {
-    mem_symbol *sym = memsyms.find_symbol(sample->addr);
+    mem_symbol *sym = SAMP::find_symbol(sample->addr);
 
     if(sym != NULL)
     {
@@ -29,13 +30,13 @@ void workit()
 {
     int i,j,k;
 
-    double *a = (double*)malloc(sizeof(double)*N*N);
-    double *b = (double*)malloc(sizeof(double)*N*N);
-    double *c = (double*)malloc(sizeof(double)*N*N);
+    a = (double*)malloc(sizeof(double)*N*N);
+    b = (double*)malloc(sizeof(double)*N*N);
+    c = (double*)malloc(sizeof(double)*N*N);
 
-    memsyms.add_symbol("a",a,sizeof(double),N*N);
-    memsyms.add_symbol("b",b,sizeof(double),N*N);
-    memsyms.add_symbol("c",c,sizeof(double),N*N);
+    SAMP::add_symbol("a",a,sizeof(double),N*N);
+    SAMP::add_symbol("b",b,sizeof(double),N*N);
+    SAMP::add_symbol("c",c,sizeof(double),N*N);
 
     for(i=0; i<N; ++i)
         for(j=0; j<N; ++j)
@@ -50,13 +51,12 @@ void workit()
 
 int main(int argc, char **argv)
 {
-    sampler.set_sample_mode(SMPL_MEMORY);
-    sampler.set_handler(&sample_handler);
+    SAMP::set_sample_mode(SMPL_MEMORY);
+    SAMP::set_handler(&sample_handler);
 
-    sampler.prepare();
+    SAMP::sampler.prepare();
 
-    sampler.set_handler(&sample_handler);
-    sampler.begin_sampler();
+    SAMP::begin_sampler();
     workit();
-    sampler.end_sampler();
+    SAMP::end_sampler();
 }
