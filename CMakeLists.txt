@@ -12,8 +12,8 @@ endif()
 # pthreads
 find_package(Threads)
 
-set(SRC_FILES perfsmpl.cpp dbgmem.cpp memstat.cpp)
-set(HDR_FILES perfsmpl.h dbgmem.h memstat.h SAMP.h)
+set(SRC_FILES perfsmpl.cpp mattr.cpp)
+set(HDR_FILES perfsmpl.h mattr.h SAMP.h)
 
 add_library(perfsmpl SHARED ${SRC_FILES})
 add_library(perfsmpl_static STATIC ${SRC_FILES})

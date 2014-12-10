@@ -13,7 +13,7 @@ double *c;
 
 void sample_handler(perf_event_sample *sample, void *args)
 {
-    mem_symbol *sym = SAMP::find_symbol(sample->addr);
+    mem_symbol *sym = SAMP_find_symbol(sample->addr);
 
     if(sym != NULL)
     {
@@ -34,9 +34,9 @@ void workit()
     b = (double*)malloc(sizeof(double)*N*N);
     c = (double*)malloc(sizeof(double)*N*N);
 
-    SAMP::add_symbol("a",a,sizeof(double),N*N);
-    SAMP::add_symbol("b",b,sizeof(double),N*N);
-    SAMP::add_symbol("c",c,sizeof(double),N*N);
+    SAMP_add_symbol("a",a,sizeof(double),N*N);
+    SAMP_add_symbol("b",b,sizeof(double),N*N);
+    SAMP_add_symbol("c",c,sizeof(double),N*N);
 
     for(i=0; i<N; ++i)
         for(j=0; j<N; ++j)
@@ -51,12 +51,12 @@ void workit()
 
 int main(int argc, char **argv)
 {
-    SAMP::set_sample_mode(SMPL_MEMORY);
-    SAMP::set_handler(&sample_handler);
+    SAMP_set_sample_mode(SMPL_INSTRUCTIONS);
+    SAMP_set_handler(&sample_handler);
 
-    SAMP::sampler.prepare();
+    SAMP_prepare();
 
-    SAMP::begin_sampler();
+    SAMP_begin_sampler();
     workit();
-    SAMP::end_sampler();
+    SAMP_end_sampler();
 }
