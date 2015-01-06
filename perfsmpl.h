@@ -35,6 +35,7 @@ public:
     ~perfsmpl();
 
     int prepare();
+    int prepare(pid_t PID) { mPID=PID; prepare(); }
 
     int begin_sampler();
     void end_sampler();
@@ -71,6 +72,7 @@ private:
 
     // perf_event variables
     int fd;
+    pid_t mPID;
     struct perf_event_mmap_page *mmap_buf;
     uint64_t counter_value;
 

@@ -19,6 +19,8 @@ add_library(perfsmpl SHARED ${SRC_FILES})
 add_library(perfsmpl_static STATIC ${SRC_FILES})
 
 add_executable(test test.cpp)
+add_executable(memaxes memaxes.cpp)
 
 target_link_libraries(perfsmpl ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(test perfsmpl symtabAPI)
+target_link_libraries(memaxes perfsmpl symtabAPI)

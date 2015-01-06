@@ -23,6 +23,7 @@ perfsmpl::perfsmpl()
     ready = 0;
     stop = 0;
 
+    mPID = 0;
     custom_handler = 0;
 
     collected_samples = 0;
@@ -97,12 +98,11 @@ void perfsmpl::init_attr()
 int perfsmpl::init_perf()
 {
     // Create attr according to sample mode
-    // Setup
-    fd = syscall(__NR_perf_event_open, &pe,0,-1,-1,0);
+    fd = syscall(__NR_perf_event_open, &pe,mPID,-1,-1,0);
 
     if(fd == -1) 
     {
-       std::cerr << "Error from perf_event_open syscall" << std::endl;
+       perror("perf_event_open");
        ready=0;
        return -1;
     }
@@ -149,8 +149,7 @@ int perfsmpl::begin_sampler()
 {
     if(!ready)
     {
-        std::cerr << "Not ready to begin sampling!\n" << std::endl;
-        std::cerr << "Did you prepare()?\n" << std::endl;
+        std::cerr << "Not ready to begin sampling!" << std::endl;
         return -1;
     }
 
@@ -158,7 +157,7 @@ int perfsmpl::begin_sampler()
 
     if(ret)
     {
-        std::cerr << "Couldn't initialize sample handler thread, aborting!\n";
+        std::cerr << "Couldn't initialize sample handler thread, aborting!";
         std::cerr << std::endl;
         return ret;
     }
