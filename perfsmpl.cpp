@@ -289,8 +289,8 @@ int perfsmpl::process_sample_buffer()
                 process_freq_sample(mmap_buf);
                 break;
             default:
-                std::cerr << "Unknown sample type ";
-                std::cerr << ehdr.type << std::endl;
+                //std::cerr << "Unknown sample type ";
+                //std::cerr << ehdr.type << std::endl;
                 skip_mmap_buffer(mmap_buf,sizeof(ehdr));
         }
     }

@@ -30,7 +30,10 @@ void postprocess()
        success = obj->getSourceLines(stats,samples[i].ip);
        
        if(success)
+       {
+           std::cout << "sucksess" << std::endl;
            line_info[i] = stats[0];
+       }
     }
 }
 
@@ -44,12 +47,12 @@ void dump()
     {
         std::cout << "??,"; // variable
         std::cout << (line_info[i] ? line_info[i]->getFile().c_str() : "??") << ","; // source
-        std::cout << (line_info[i] ? line_info[i]->getLine() : -1) << ","; // line
-        std::cout << samples[i].time << ","; 
-        std::cout << samples[i].weight << ","; 
-        std::cout << samples[i].data_src << ","; 
-        std::cout << samples[i].addr << ","; 
-        std::cout << samples[i].cpu << std::endl;
+        std::cout << std::dec << (line_info[i] ? line_info[i]->getLine() : -1) << ","; // line
+        std::cout << std::hex << samples[i].time << ","; 
+        std::cout << std::dec << samples[i].weight << ","; 
+        std::cout << std::hex << samples[i].data_src << ","; 
+        std::cout << std::hex << samples[i].addr << ","; 
+        std::cout << std::dec << samples[i].cpu << std::endl;
     }
 }
 
