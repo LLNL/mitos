@@ -21,4 +21,4 @@ add_library(perfsmpl_static STATIC ${SRC_FILES})
 add_executable(test test.cpp)
 
 target_link_libraries(perfsmpl ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(test perfsmpl)
+target_link_libraries(test perfsmpl symtabAPI)

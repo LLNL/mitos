@@ -52,7 +52,7 @@ void perfsmpl::init_attr()
     pe.exclude_host = 0;
     pe.exclude_guest = 1;
     pe.pinned = 0;
-    pe.sample_id_all = 1;
+    pe.sample_id_all = 0;
 
     pe.sample_period = 4000;
     pe.freq = 0;
@@ -81,7 +81,7 @@ void perfsmpl::init_attr()
     if(mode == SMPL_INSTRUCTIONS)
     {
         pe.type = PERF_TYPE_HARDWARE;
-        pe.config = PERF_COUNT_HW_INSTRUCTIONS;
+        pe.config = PERF_COUNT_SW_DUMMY;
         pe.sample_type = 
             PERF_SAMPLE_IP | 
             PERF_SAMPLE_CALLCHAIN | 
