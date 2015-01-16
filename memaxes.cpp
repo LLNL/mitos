@@ -72,11 +72,10 @@ int main(int argc, char **argv)
     {
         ptrace(PTRACE_TRACEME,0,0,0);
 	//execl("/bin/dd", "/bin/dd", "if=/dev/urandom", "of=/dev/null", "count=10000", (char *) 0);
-        int err = execv(argv[1],&argv[1]);
+        int err = execvp(argv[1],&argv[1]);
         if(err)
         {
-            perror("execv");
-            std::cerr << "Note: \'" << argv[1] << "\' must be an absolute path!" << std::endl;
+            perror("execvp");
         }
     }
     else if(child < 0)
