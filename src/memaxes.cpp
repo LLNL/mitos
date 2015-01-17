@@ -13,7 +13,7 @@ std::vector<perf_event_sample> samples;
 size_t bufsz = 4096;
 uint64_t period = 4000;
 uint64_t thresh = 7;
-char* fout_name;
+char* fout_name = strdup("samples.out");
 std::ofstream fout;
 
 void dump_header()
@@ -88,18 +88,32 @@ int parse_args(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-    fout_name = strdup("samples.out");
+    int cmdarg = -1;
+    for(int i=1; i<argc; i++)
+    {
+        // First non-argument is start of child command
+        if(argv[i][0] != '-')
+        {
+            cmdarg = i;
+            break;
+        }
+    }
 
-    // TODO: fix this
-    //if(parse_args(argc,argv))
-    //    return 1;
+    if(cmdarg == -1)
+    {
+        usage(argv[0]);
+        return 1;
+    }
+
+    if(parse_args(cmdarg,argv))
+        return 1;
 
     pid_t child = fork();
 
     if(child == 0) 
     {
         ptrace(PTRACE_TRACEME,0,0,0);
-        int err = execvp(argv[1],&argv[1]);
+        int err = execvp(argv[cmdarg],&argv[cmdarg]);
         if(err)
         {
             perror("execvp");
