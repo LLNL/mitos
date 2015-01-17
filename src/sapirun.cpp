@@ -50,10 +50,10 @@ void usage(char *prog)
     std::cerr << "Usage:" << std::endl;
     std::cerr << prog << " [options] <cmd> [args]" << std::endl;
     std::cerr << "[options]:" << std::endl;
-    std::cerr << "    " << "-o filename" << std::endl;
-    std::cerr << "    " << "-b sample buffer size" << std::endl;
-    std::cerr << "    " << "-p sample period" << std::endl;
-    std::cerr << "    " << "-t sample latency threshold" << std::endl;
+    std::cerr << "    " << "-o filename (default samples.out)" << std::endl;
+    std::cerr << "    " << "-b sample buffer size (default 4096)" << std::endl;
+    std::cerr << "    " << "-p sample period (default 4000)" << std::endl;
+    std::cerr << "    " << "-t sample latency threshold (default 7)" << std::endl;
 }
 
 int parse_args(int argc, char **argv)
