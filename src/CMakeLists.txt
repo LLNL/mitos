@@ -13,14 +13,14 @@ endif()
 find_package(Threads)
 
 set(SRC_FILES perfsmpl.cpp mattr.cpp)
-set(HDR_FILES perfsmpl.h mattr.h SAPI.h)
+set(HDR_FILES perfsmpl.h mattr.h PSAPI.h)
 
 add_library(perfsmpl SHARED ${SRC_FILES})
 add_library(perfsmpl_static STATIC ${SRC_FILES})
 
 add_executable(test test.cpp)
-add_executable(sapirun sapirun.cpp)
+add_executable(psapirun psapirun.cpp)
 
 target_link_libraries(perfsmpl ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(test perfsmpl symtabAPI)
-target_link_libraries(sapirun perfsmpl symtabAPI)
+target_link_libraries(psapirun perfsmpl symtabAPI)

@@ -7,7 +7,7 @@
 using namespace Dyninst;
 using namespace SymtabAPI;
 
-#include "SAPI.h"
+#include "PSAPI.h"
 
 std::vector<perf_event_sample> samples;
 std::vector<Statement*> line_info;
@@ -75,9 +75,9 @@ void workit()
     b = (double*)malloc(sizeof(double)*N*N);
     c = (double*)malloc(sizeof(double)*N*N);
 
-    SAPI_add_symbol("a",a,sizeof(double),N*N);
-    SAPI_add_symbol("b",b,sizeof(double),N*N);
-    SAPI_add_symbol("c",c,sizeof(double),N*N);
+    PSAPI_add_symbol("a",a,sizeof(double),N*N);
+    PSAPI_add_symbol("b",b,sizeof(double),N*N);
+    PSAPI_add_symbol("c",c,sizeof(double),N*N);
 
     for(i=0; i<N; ++i)
         for(j=0; j<N; ++j)
@@ -92,14 +92,14 @@ void workit()
 
 int main(int argc, char **argv)
 {
-    SAPI_set_sample_mode(SMPL_MEMORY);
-    SAPI_set_handler(&sample_handler);
+    PSAPI_set_sample_mode(SMPL_MEMORY);
+    PSAPI_set_handler(&sample_handler);
 
-    SAPI_prepare();
+    PSAPI_prepare();
 
-    SAPI_begin_sampler();
+    PSAPI_begin_sampler();
     workit();
-    SAPI_end_sampler();
+    PSAPI_end_sampler();
 
     std::cout << "post" << std::endl;
     postprocess();

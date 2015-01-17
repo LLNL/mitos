@@ -6,7 +6,7 @@
 #include <fstream>
 #include <vector>
 
-#include "SAPI.h"
+#include "PSAPI.h"
 
 std::vector<perf_event_sample> samples;
 
@@ -139,21 +139,21 @@ int main(int argc, char **argv)
 
         dump_header();
 
-        SAPI_set_sample_mode(SMPL_MEMORY);
+        PSAPI_set_sample_mode(SMPL_MEMORY);
 
-        SAPI_set_sample_period(period);
-        SAPI_set_sample_threshold(thresh);
+        PSAPI_set_sample_period(period);
+        PSAPI_set_sample_threshold(thresh);
 
-        SAPI_set_handler(&sample_handler);
+        PSAPI_set_handler(&sample_handler);
         
-        SAPI_prepare(child);
+        PSAPI_prepare(child);
 
-        SAPI_begin_sampler();
+        PSAPI_begin_sampler();
         {
             ptrace(PTRACE_CONT,child,0,0);
             wait(&status);
         }
-        SAPI_end_sampler();
+        PSAPI_end_sampler();
 
         dump_samples(); // anything left over
     }
