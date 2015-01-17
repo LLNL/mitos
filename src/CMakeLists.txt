@@ -13,7 +13,7 @@ endif()
 find_package(Threads)
 
 set(SRC_FILES perfsmpl.cpp mattr.cpp)
-set(HDR_FILES perfsmpl.h mattr.h SAMP.h)
+set(HDR_FILES perfsmpl.h mattr.h SAPI.h)
 
 add_library(perfsmpl SHARED ${SRC_FILES})
 add_library(perfsmpl_static STATIC ${SRC_FILES})

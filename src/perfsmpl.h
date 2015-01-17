@@ -40,7 +40,9 @@ public:
     int begin_sampler();
     void end_sampler();
     
-    int set_sample_mode(sample_mode m) { this->mode = m; }
+    void set_sample_mode(sample_mode m) { this->mode = m; }
+    void set_sample_period(uint64_t p) { sample_period = p; }
+    void set_sample_threshold(uint64_t t) { sample_threshold = t; }
 
     void set_handler(sample_handler_fn_t h) { this->handler = h; custom_handler = 1; }
 
@@ -80,6 +82,7 @@ private:
     struct perf_event_attr pe;
 
     uint64_t sample_period;
+    uint64_t sample_threshold;
     uint64_t sample_type;
 
     size_t mmap_pages;

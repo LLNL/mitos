@@ -14,7 +14,8 @@ perfsmpl::perfsmpl()
 {
     // Defaults
     mmap_pages = 32;
-    sample_period = 10;
+    sample_period = 4000;
+    sample_threshold = 7;
     pgsz = sysconf(_SC_PAGESIZE);
     mmap_size = (mmap_pages+1)*pgsz;
     pgmsk = mmap_pages*pgsz-1;
@@ -55,7 +56,7 @@ void perfsmpl::init_attr()
     pe.pinned = 0;
     pe.sample_id_all = 0;
 
-    pe.sample_period = 4000;
+    pe.sample_period = sample_period;
     pe.freq = 0;
 
     if(mode == SMPL_MEMORY)
@@ -63,7 +64,7 @@ void perfsmpl::init_attr()
         // TODO: look this up in libpfm
         pe.type = PERF_TYPE_RAW;
         pe.config = 0x5101cd;
-        pe.config1 = 3; // ldlat
+        pe.config1 = sample_threshold; // ldlat
         pe.sample_type = 
             PERF_SAMPLE_IP | 
             PERF_SAMPLE_CALLCHAIN | 

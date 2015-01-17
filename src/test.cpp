@@ -1,7 +1,3 @@
-#include <unistd.h>
-#include <sys/ptrace.h>
-#include <sys/wait.h>
-
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -11,9 +7,8 @@
 using namespace Dyninst;
 using namespace SymtabAPI;
 
-#include "SAMP.h"
+#include "SAPI.h"
 
-//char **cmd;
 std::vector<perf_event_sample> samples;
 std::vector<Statement*> line_info;
 
@@ -35,7 +30,10 @@ void postprocess()
        success = obj->getSourceLines(stats,samples[i].ip);
        
        if(success)
+       {
+           std::cout << "sucksess" << std::endl;
            line_info[i] = stats[0];
+       }
     }
 }
 
@@ -63,44 +61,48 @@ void sample_handler(perf_event_sample *sample, void *args)
    samples.push_back(*sample);
 }
 
+void workit()
+{
+    int N = 512;
+    
+    double *a;
+    double *b;
+    double *c;
+
+    int i,j,k;
+
+    a = (double*)malloc(sizeof(double)*N*N);
+    b = (double*)malloc(sizeof(double)*N*N);
+    c = (double*)malloc(sizeof(double)*N*N);
+
+    SAPI_add_symbol("a",a,sizeof(double),N*N);
+    SAPI_add_symbol("b",b,sizeof(double),N*N);
+    SAPI_add_symbol("c",c,sizeof(double),N*N);
+
+    for(i=0; i<N; ++i)
+        for(j=0; j<N; ++j)
+            c[i*N+j] = 0;
+
+    for(i=0; i<N; ++i)
+        for(j=0; j<N; ++j)
+            for(k=0; k<N; ++k)
+                c[i*N+j] += a[i*N+k] * b[k*N+j];
+
+}
+
 int main(int argc, char **argv)
 {
-    // Fork 
-    pid_t child = fork();
+    SAPI_set_sample_mode(SMPL_MEMORY);
+    SAPI_set_handler(&sample_handler);
 
-    if(child == 0) 
-    {
-        ptrace(PTRACE_TRACEME,0,0,0);
-	//execl("/bin/dd", "/bin/dd", "if=/dev/urandom", "of=/dev/null", "count=10000", (char *) 0);
-        int err = execvp(argv[1],&argv[1]);
-        if(err)
-        {
-            perror("execvp");
-        }
-    }
-    else if(child < 0)
-    {
-        std::cerr << "Error forking!" << std::endl;
-    } 
-    else
-    {
-        int status;
-        wait(&status);
+    SAPI_prepare();
 
-        SAMP_set_sample_mode(SMPL_MEMORY);
-        SAMP_set_handler(&sample_handler);
-        
-        SAMP_prepare(child);
+    SAPI_begin_sampler();
+    workit();
+    SAPI_end_sampler();
 
-        SAMP_begin_sampler();
-        {
-            ptrace(PTRACE_CONT,child,0,0);
-            wait(&status);
-        }
-        SAMP_end_sampler();
-
-        postprocess();
-        dump();
-    }
-
+    std::cout << "post" << std::endl;
+    postprocess();
+    std::cout << "dump" << std::endl;
+    dump();
 }
