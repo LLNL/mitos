@@ -1,22 +1,12 @@
-project(perfsmpl)
-cmake_minimum_required(VERSION 2.8)
-
-# perf_event
-set(PERF_PARANOID /proc/sys/kernel/perf_event_paranoid)
-if(EXISTS ${PERF_PARANOID})
-    message(STATUS "${PERF_PARANOID} found")
-else()
-    message(FATAL_ERROR "${PERF_PARANOID} not found, perfsmpl requires a kernel with perf_events enabled!")
-endif()
-
-# pthreads
-find_package(Threads)
-
 set(SRC_FILES perfsmpl.cpp mattr.cpp)
 set(HDR_FILES perfsmpl.h mattr.h PSAPI.h)
 
+# Add shared and static libs
 add_library(perfsmpl SHARED ${SRC_FILES})
 add_library(perfsmpl_static STATIC ${SRC_FILES})
+
+# Static lib has same root name as dynamic lib
+set_target_properties(perfsmpl_static PROPERTIES OUTPUT_NAME perfsmpl)
 
 add_executable(test test.cpp)
 add_executable(psapirun psapirun.cpp)
@@ -24,3 +14,9 @@ add_executable(psapirun psapirun.cpp)
 target_link_libraries(perfsmpl ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(test perfsmpl symtabAPI)
 target_link_libraries(psapirun perfsmpl symtabAPI)
+
+include_directories(${DYNINST_INCLUDE_DIR})
+
+# Install paspirun and the libraries.
+install(TARGETS psapirun DESTINATION bin)
+install(TARGETS perfsmpl perfsmpl_static DESTINATION lib)
