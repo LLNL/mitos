@@ -17,7 +17,7 @@ class perfsmpl;
 class perf_event_sample;
 
 typedef void (*sample_handler_fn_t)(perf_event_sample *sample, void *args);
-static void* sample_reader_fn(void *args);
+void* sample_reader_fn(void *args);
 
 enum sample_mode
 {
@@ -35,11 +35,11 @@ public:
     ~perfsmpl();
 
     int prepare();
-    int prepare(pid_t PID) { mPID=PID; prepare(); }
+    void prepare(pid_t PID) { mPID=PID; prepare(); }
 
     int begin_sampler();
     void end_sampler();
-    
+
     void set_sample_mode(sample_mode m) { this->mode = m; }
     void set_sample_period(uint64_t p) { sample_period = p; }
     void set_sample_threshold(uint64_t t) { sample_threshold = t; }
@@ -58,7 +58,7 @@ private:
 
     int read_mmap_buffer(struct perf_event_mmap_page *mmap_buf, char *out, size_t sz);
     void skip_mmap_buffer(struct perf_event_mmap_page *mmap_buf, size_t sz);
-    
+
     void process_lost_sample(struct perf_event_mmap_page *mmap_buf);
     void process_freq_sample(struct perf_event_mmap_page *mmap_buf);
     void process_exit_sample(struct perf_event_mmap_page *mmap_buf);
@@ -111,7 +111,7 @@ private:
 
 public:
     // Raw perf_event sample data
-   
+
     //struct perf_event_header header;
     uint64_t   sample_id;  /* if PERF_SAMPLE_IDENTIFIER */
     uint64_t   ip;         /* if PERF_SAMPLE_IP */

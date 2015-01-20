@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <cstdlib>
 
 #include "PSAPI.h"
 
@@ -23,13 +24,13 @@ void dump_header()
 
 void dump_samples()
 {
-    for(int i=0; i<samples.size(); i++)
+    for(size_t i=0; i<samples.size(); i++)
     {
         fout << "??,"; // variable
-        fout << std::hex << samples[i].time << ","; 
-        fout << std::dec << samples[i].weight << ","; 
-        fout << std::hex << samples[i].data_src << ","; 
-        fout << std::hex << samples[i].addr << ","; 
+        fout << std::hex << samples[i].time << ",";
+        fout << std::dec << samples[i].weight << ",";
+        fout << std::hex << samples[i].data_src << ",";
+        fout << std::hex << samples[i].addr << ",";
         fout << std::dec << samples[i].cpu << std::endl;
     }
 }
@@ -110,7 +111,7 @@ int main(int argc, char **argv)
 
     pid_t child = fork();
 
-    if(child == 0) 
+    if(child == 0)
     {
         ptrace(PTRACE_TRACEME,0,0,0);
         int err = execvp(argv[cmdarg],&argv[cmdarg]);
@@ -122,7 +123,7 @@ int main(int argc, char **argv)
     else if(child < 0)
     {
         std::cerr << "Error forking!" << std::endl;
-    } 
+    }
     else
     {
         int status;
@@ -145,7 +146,7 @@ int main(int argc, char **argv)
         PSAPI_set_sample_threshold(thresh);
 
         PSAPI_set_handler(&sample_handler);
-        
+
         PSAPI_prepare(child);
 
         PSAPI_begin_sampler();

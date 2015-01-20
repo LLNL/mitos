@@ -1,13 +1,15 @@
 #include "perfsmpl.h"
 
-static void *sample_reader_fn(void *args)
+void *sample_reader_fn(void *args)
 {
     perfsmpl *pep = (perfsmpl*)args;
 
-    while(!pep->stop) 
+    while(!pep->stop)
     {
         pep->process_sample_buffer();
     }
+
+    return NULL;
 }
 
 perfsmpl::perfsmpl()
@@ -65,17 +67,17 @@ void perfsmpl::init_attr()
         pe.type = PERF_TYPE_RAW;
         pe.config = 0x5101cd;
         pe.config1 = sample_threshold; // ldlat
-        pe.sample_type = 
-            PERF_SAMPLE_IP | 
-            PERF_SAMPLE_CALLCHAIN | 
-            PERF_SAMPLE_ID | 
-            PERF_SAMPLE_STREAM_ID | 
-            PERF_SAMPLE_TIME | 
-            PERF_SAMPLE_TID | 
-            PERF_SAMPLE_PERIOD | 
-            PERF_SAMPLE_CPU | 
-            PERF_SAMPLE_ADDR | 
-            PERF_SAMPLE_WEIGHT | 
+        pe.sample_type =
+            PERF_SAMPLE_IP |
+            PERF_SAMPLE_CALLCHAIN |
+            PERF_SAMPLE_ID |
+            PERF_SAMPLE_STREAM_ID |
+            PERF_SAMPLE_TIME |
+            PERF_SAMPLE_TID |
+            PERF_SAMPLE_PERIOD |
+            PERF_SAMPLE_CPU |
+            PERF_SAMPLE_ADDR |
+            PERF_SAMPLE_WEIGHT |
             PERF_SAMPLE_DATA_SRC;
         pe.precise_ip = 2;
     }
@@ -84,14 +86,14 @@ void perfsmpl::init_attr()
     {
         pe.type = PERF_TYPE_HARDWARE;
         pe.config = PERF_COUNT_SW_DUMMY;
-        pe.sample_type = 
-            PERF_SAMPLE_IP | 
-            PERF_SAMPLE_CALLCHAIN | 
-            PERF_SAMPLE_ID | 
-            PERF_SAMPLE_STREAM_ID | 
-            PERF_SAMPLE_TIME | 
-            PERF_SAMPLE_TID | 
-            PERF_SAMPLE_PERIOD | 
+        pe.sample_type =
+            PERF_SAMPLE_IP |
+            PERF_SAMPLE_CALLCHAIN |
+            PERF_SAMPLE_ID |
+            PERF_SAMPLE_STREAM_ID |
+            PERF_SAMPLE_TIME |
+            PERF_SAMPLE_TID |
+            PERF_SAMPLE_PERIOD |
             PERF_SAMPLE_CPU;
     }
 }
@@ -101,7 +103,7 @@ int perfsmpl::init_perf()
     // Create attr according to sample mode
     fd = syscall(__NR_perf_event_open, &pe,mPID,-1,-1,0);
 
-    if(fd == -1) 
+    if(fd == -1)
     {
        perror("perf_event_open");
        ready=0;
@@ -112,7 +114,7 @@ int perfsmpl::init_perf()
     mmap_buf = (struct perf_event_mmap_page*)
         mmap(NULL, mmap_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 
-    if(mmap_buf == MAP_FAILED) 
+    if(mmap_buf == MAP_FAILED)
     {
        std::cerr << "Error mmap-ing buffer " << std::endl;
        ready = 0;
@@ -199,7 +201,7 @@ int perfsmpl::process_single_sample(struct perf_event_mmap_page *mmap_buf)
     {
         read_mmap_buffer(mmap_buf,(char*)&sample->ip,sizeof(uint64_t));
     }
-    
+
     if(has_attribute(PERF_SAMPLE_TID))
     {
         read_mmap_buffer(mmap_buf,(char*)&sample->pid,sizeof(uint32_t));
@@ -301,7 +303,7 @@ int perfsmpl::read_mmap_buffer(struct perf_event_mmap_page *mmap_buf, char *out,
 	char *data;
 	unsigned long tail;
 	size_t avail_sz, m, c;
-	
+
 	data = ((char *)mmap_buf)+sysconf(_SC_PAGESIZE);
 	tail = mmap_buf->data_tail & pgmsk;
 	avail_sz = mmap_buf->data_head - mmap_buf->data_tail;
@@ -328,8 +330,6 @@ void perfsmpl::skip_mmap_buffer(struct perf_event_mmap_page *mmap_buf, size_t sz
 void perfsmpl::process_lost_sample(struct perf_event_mmap_page *mmap_buf)
 {
 	struct { uint64_t id, lost; } lost;
-	const char *str;
-
 	ret = read_mmap_buffer(mmap_buf,(char*)&lost,sizeof(lost));
 
 	lost_samples += lost.lost;

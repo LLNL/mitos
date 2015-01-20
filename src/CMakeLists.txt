@@ -1,4 +1,4 @@
-set(SRC_FILES perfsmpl.cpp mattr.cpp)
+set(SRC_FILES perfsmpl.cpp mattr.cpp PSAPI.cpp)
 set(HDR_FILES perfsmpl.h mattr.h PSAPI.h)
 
 # Add shared and static libs

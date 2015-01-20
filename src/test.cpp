@@ -20,15 +20,15 @@ void postprocess()
     int success = Symtab::openFile(obj,"test");
     if(!success)
         std::cerr << "cant open symtab" << std::endl;
-    
+
     // Populate line info
     line_info.resize(samples.size(),NULL);
 
-    for(int i=0; i<samples.size(); i++)
+    for(size_t i=0; i<samples.size(); i++)
     {
        std::vector<Statement*> stats;
        success = obj->getSourceLines(stats,samples[i].ip);
-       
+
        if(success)
        {
            std::cout << "sucksess" << std::endl;
@@ -43,15 +43,15 @@ void dump()
     std::cout << "variable,source,line,time,latency,dataSource,address,cpu" << std::endl;
 
     // Tuples
-    for(int i=0; i<samples.size(); i++)
+    for(size_t i=0; i<samples.size(); i++)
     {
         std::cout << "??,"; // variable
         std::cout << (line_info[i] ? line_info[i]->getFile().c_str() : "??") << ","; // source
         std::cout << std::dec << (line_info[i] ? line_info[i]->getLine() : -1) << ","; // line
-        std::cout << std::hex << samples[i].time << ","; 
-        std::cout << std::dec << samples[i].weight << ","; 
-        std::cout << std::hex << samples[i].data_src << ","; 
-        std::cout << std::hex << samples[i].addr << ","; 
+        std::cout << std::hex << samples[i].time << ",";
+        std::cout << std::dec << samples[i].weight << ",";
+        std::cout << std::hex << samples[i].data_src << ",";
+        std::cout << std::hex << samples[i].addr << ",";
         std::cout << std::dec << samples[i].cpu << std::endl;
     }
 }
@@ -64,7 +64,7 @@ void sample_handler(perf_event_sample *sample, void *args)
 void workit()
 {
     int N = 512;
-    
+
     double *a;
     double *b;
     double *c;

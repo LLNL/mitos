@@ -92,6 +92,6 @@ void mattr::add_symbol(std::string n, void *a, size_t s, size_t l)
 
 void mattr::add_symbol_vec(std::vector<mem_symbol> &v)
 {
-    for(int i=0; i<v.size(); ++i)
+    for(size_t i=0; i<v.size(); ++i)
         add_symbol(v[i]);
 }
