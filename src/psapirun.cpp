@@ -46,10 +46,10 @@ void sample_handler(perf_event_sample *sample, void *args)
     }
 }
 
-void usage(char *prog)
+void usage(char **argv)
 {
     std::cerr << "Usage:" << std::endl;
-    std::cerr << prog << " [options] <cmd> [args]" << std::endl;
+    std::cerr << argv[0] << " [options] <cmd> [args]" << std::endl;
     std::cerr << "[options]:" << std::endl;
     std::cerr << "    " << "-o filename (default samples.out)" << std::endl;
     std::cerr << "    " << "-b sample buffer size (default 4096)" << std::endl;
@@ -77,7 +77,7 @@ int parse_args(int argc, char **argv)
                 thresh = atoi(optarg);
                 break;
             case '?':
-                usage(argv[0]);
+                usage(argv);
                 return 1;
             default:
                 abort();
@@ -87,22 +87,39 @@ int parse_args(int argc, char **argv)
     return 0;
 }
 
-int main(int argc, char **argv)
+int findCmdArgId(int argc, char **argv)
 {
+    // case 1: argv[0] -f1000 cmd
+    // case 2: argv[0] -f 1000 cmd
     int cmdarg = -1;
+    bool isarg = false;
     for(int i=1; i<argc; i++)
     {
-        // First non-argument is start of child command
         if(argv[i][0] != '-')
         {
-            cmdarg = i;
-            break;
+            if(isarg)
+                isarg = false;
+            else
+                return i;
+        }
+        else
+        {
+            if(strlen(argv[i]) > 2)
+                isarg = false;
+            else
+                isarg = true;
         }
     }
+    return cmdarg;
+}
+
+int main(int argc, char **argv)
+{
+    int cmdarg = findCmdArgId(argc,argv);
 
     if(cmdarg == -1)
     {
-        usage(argv[0]);
+        usage(argv);
         return 1;
     }
 
