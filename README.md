@@ -47,7 +47,7 @@ PSAPI requires:
    `samples.out` file containing memory samples.
 
 
-`psapirun` can also be fine-tuned with the following parameters:
+   `psapirun` can also be fine-tuned with the following parameters:
 
    ```
    Usage:
@@ -75,7 +75,7 @@ PSAPI requires:
    the same samples plus source files and line numbers
    associated with each sample.
 
-`psapiprocess` also accepts the following parameters:
+   `psapiprocess` also accepts the following parameters:
 
    ```
    Usage:
