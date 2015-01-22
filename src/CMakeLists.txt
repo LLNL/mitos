@@ -10,13 +10,16 @@ set_target_properties(perfsmpl_static PROPERTIES OUTPUT_NAME perfsmpl)
 
 add_executable(test test.cpp)
 add_executable(psapirun psapirun.cpp)
+add_executable(psapiprocess psapiprocess.cpp)
 
 target_link_libraries(perfsmpl ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(test perfsmpl symtabAPI)
-target_link_libraries(psapirun perfsmpl symtabAPI)
+target_link_libraries(psapirun perfsmpl)
+target_link_libraries(psapiprocess perfsmpl symtabAPI)
 
 include_directories(${DYNINST_INCLUDE_DIR})
 
 # Install paspirun and the libraries.
 install(TARGETS psapirun DESTINATION bin)
+install(TARGETS psapiprocess DESTINATION bin)
 install(TARGETS perfsmpl perfsmpl_static DESTINATION lib)

@@ -10,44 +10,19 @@ using namespace SymtabAPI;
 #include "PSAPI.h"
 
 std::vector<perf_event_sample> samples;
-std::vector<Statement*> line_info;
 
-void postprocess()
-{
-    Symtab *obj;
-
-    // Open current binary
-    int success = Symtab::openFile(obj,"test");
-    if(!success)
-        std::cerr << "cant open symtab" << std::endl;
-
-    // Populate line info
-    line_info.resize(samples.size(),NULL);
-
-    for(size_t i=0; i<samples.size(); i++)
-    {
-       std::vector<Statement*> stats;
-       success = obj->getSourceLines(stats,samples[i].ip);
-
-       if(success)
-       {
-           std::cout << "sucksess" << std::endl;
-           line_info[i] = stats[0];
-       }
-    }
-}
+char* cmd;
 
 void dump()
 {
     // Header
-    std::cout << "variable,source,line,time,latency,dataSource,address,cpu" << std::endl;
+    std::cout << "variable,ip,time,latency,dataSource,address,cpu" << std::endl;
 
     // Tuples
     for(size_t i=0; i<samples.size(); i++)
     {
         std::cout << "??,"; // variable
-        std::cout << (line_info[i] ? line_info[i]->getFile().c_str() : "??") << ","; // source
-        std::cout << std::dec << (line_info[i] ? line_info[i]->getLine() : -1) << ","; // line
+        std::cout << std::hex << samples[i].ip << ",";
         std::cout << std::hex << samples[i].time << ",";
         std::cout << std::dec << samples[i].weight << ",";
         std::cout << std::hex << samples[i].data_src << ",";
@@ -92,6 +67,8 @@ void workit()
 
 int main(int argc, char **argv)
 {
+    cmd = argv[0];
+
     PSAPI_set_sample_mode(SMPL_MEMORY);
     PSAPI_set_handler(&sample_handler);
 
@@ -101,8 +78,5 @@ int main(int argc, char **argv)
     workit();
     PSAPI_end_sampler();
 
-    std::cout << "post" << std::endl;
-    postprocess();
-    std::cout << "dump" << std::endl;
     dump();
 }

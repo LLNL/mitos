@@ -9,17 +9,22 @@
 
 #include "PSAPI.h"
 
-std::vector<perf_event_sample> samples;
+size_t bufsz;
+uint64_t period;
+uint64_t thresh;
+char* fout_name;
 
-size_t bufsz = 4096;
-uint64_t period = 4000;
-uint64_t thresh = 7;
-char* fout_name = strdup("samples.out");
+#define DEFAULT_BUFSZ       4096
+#define DEFAULT_THRESH      10
+#define DEFAULT_PERIOD      4000
+#define DEFAULT_FOUT_NAME   "samples.out"
+
 std::ofstream fout;
+std::vector<perf_event_sample> samples;
 
 void dump_header()
 {
-    fout << "variable,time,latency,dataSource,address,cpu" << std::endl;
+    fout << "variable,ip,time,latency,dataSource,address,cpu" << std::endl;
 }
 
 void dump_samples()
@@ -27,6 +32,7 @@ void dump_samples()
     for(size_t i=0; i<samples.size(); i++)
     {
         fout << "??,"; // variable
+        fout << std::hex << samples[i].ip << ",";
         fout << std::hex << samples[i].time << ",";
         fout << std::dec << samples[i].weight << ",";
         fout << std::hex << samples[i].data_src << ",";
@@ -50,15 +56,27 @@ void usage(char **argv)
 {
     std::cerr << "Usage:" << std::endl;
     std::cerr << argv[0] << " [options] <cmd> [args]" << std::endl;
-    std::cerr << "[options]:" << std::endl;
-    std::cerr << "    " << "-o filename (default samples.out)" << std::endl;
-    std::cerr << "    " << "-b sample buffer size (default 4096)" << std::endl;
-    std::cerr << "    " << "-p sample period (default 4000)" << std::endl;
-    std::cerr << "    " << "-t sample latency threshold (default 7)" << std::endl;
+    std::cerr << "    [options]:" << std::endl;
+    std::cerr << "        -o filename (default samples.out)" << std::endl;
+    std::cerr << "        -b sample buffer size (default 4096)" << std::endl;
+    std::cerr << "        -p sample period (default 4000)" << std::endl;
+    std::cerr << "        -t sample latency threshold (default 10)" << std::endl;
+    std::cerr << "    <cmd>: command to sample on (required)" << std::endl;
+    std::cerr << "    [args]: command arguments" << std::endl;
+}
+
+void set_defaults()
+{
+    bufsz = DEFAULT_BUFSZ;
+    period = DEFAULT_PERIOD;
+    thresh = DEFAULT_THRESH;
+    fout_name = strdup(DEFAULT_FOUT_NAME);
 }
 
 int parse_args(int argc, char **argv)
 {
+    set_defaults();
+
     int c;
     while((c=getopt(argc, argv, "o:b:p:t:")) != -1)
     {
