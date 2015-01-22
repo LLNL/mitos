@@ -79,7 +79,7 @@ void dump_samples()
 
 void usage(char **argv)
 {
-    cerr << "Usage: ";
+    cerr << "Usage: " << endl;
     cerr << argv[0] << " [options] <sample_file> <debug_binary>" << endl;
     cerr << "    [options]:" << endl;
     cerr << "        -o filename (default processed_<sample_file>)" << endl;

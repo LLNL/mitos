@@ -52,11 +52,38 @@ PSAPI requires:
    ```
    Usage:
    ./psapirun [options] <cmd> [args]
-   [options]:
-       -o filename (default samples.out)
-       -b sample buffer size (default 4096)
-       -p sample period (default 4000)
-       -t sample latency threshold (default 7)
+       [options]:
+           -o filename (default samples.out)
+           -b sample buffer size (default 4096)
+           -p sample period (default 4000)
+           -t sample latency threshold (default 10)
+       <cmd>: command to sample on (required)
+       [args]: command arguments
+   ```
+
+3. Run `psapiprocess` on the memory samples file, supplying a binary 
+   with debug information (compiled with -g) to generate a new output
+   file with source and line information. For example:
+
+   ```
+   psapiprocess samples.out ./a.out
+   ```
+
+   Where `a.out` is some binary with debug information and `samples.out`
+   was obtained by executing `psapirun ./a.out`. The above command
+   will produce a new file, `processed_samples.out`, which contains
+   the same samples plus source files and line numbers
+   associated with each sample.
+
+`psapiprocess` also accepts the following parameters:
+
+   ```
+   Usage:
+   ./psapiprocess [options] <sample_file> <debug_binary>
+       [options]:
+           -o filename (default processed_<sample_file>)
+       <sample_file>: a csv file created using psapirun
+       <debug_binary>: the binary executed with psapirun (must contain debug symbols to be useful)
    ```
 
 # Authors
