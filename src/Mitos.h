@@ -10,7 +10,7 @@
 void Mitos_set_sample_mode(sample_mode m);
 void Mitos_set_sample_period(uint64_t p);
 void Mitos_set_sample_threshold(uint64_t t);
-void Mitos_set_handler(sample_handler_fn_t h);
+void Mitos_set_handler(sample_handler_fn_t h, void *args=NULL);
 
 void Mitos_prepare();
 void Mitos_prepare(pid_t pid);

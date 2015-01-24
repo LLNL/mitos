@@ -40,11 +40,11 @@ public:
     int begin_sampler();
     void end_sampler();
 
-    void set_sample_mode(sample_mode m) { this->mode = m; }
+    void set_sample_mode(sample_mode m) { mode = m; }
     void set_sample_period(uint64_t p) { sample_period = p; }
     void set_sample_threshold(uint64_t t) { sample_threshold = t; }
 
-    void set_handler(sample_handler_fn_t h) { this->handler = h; custom_handler = 1; }
+    void set_handler(sample_handler_fn_t h, void* args) { handler = h; handler_args = args; custom_handler = 1; }
 
     inline bool has_attribute(int attr) { return this->pe.sample_type & attr; }
 
@@ -96,6 +96,7 @@ private:
     pthread_t sample_reader_thr;
 
     sample_handler_fn_t handler;
+    void *handler_args;
 };
 
 class perf_event_sample {

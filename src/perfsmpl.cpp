@@ -258,7 +258,7 @@ int perfsmpl::process_single_sample(struct perf_event_mmap_page *mmap_buf)
 
     if(custom_handler)
     {
-        handler(sample,NULL);
+        handler(sample,handler_args);
     }
 
     return ret;
