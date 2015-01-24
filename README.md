@@ -1,6 +1,6 @@
-# Performance Sampling API (PSAPI)
+# Mitos
 
-PSAPI is a library and a tool for collecting sampled memory
+Mitos is a library and a tool for collecting sampled memory
 performance data to view with
 [MemAxes](https://github.com/scalability-llnl/MemAxes)
 
@@ -10,7 +10,7 @@ performance data to view with
 
 ## Requirements
 
-PSAPI requires:
+Mitos requires:
 
 * A Linux kernel with perf_events support for memory
   sampling.  This originated in the 3.10 Linux kernel, but is backported
@@ -33,25 +33,25 @@ PSAPI requires:
 
 ## Running
 
-1. Find the `psapirun` command in the `bin` directory in the install
+1. Find the `mitosrun` command in the `bin` directory in the install
    directory.
 
-2. Run any binary with `psapirun` like this to generate a `.csv` file
+2. Run any binary with `mitosrun` like this to generate a `.csv` file
    full of memory samples.  For example:
 
    ```
-   psapirun ls -la
+   mitosrun ls -la
    ```
 
    The above command will run the ls command and will output a
    `samples.out` file containing memory samples.
 
 
-   `psapirun` can also be fine-tuned with the following parameters:
+   `mitosrun` can also be fine-tuned with the following parameters:
 
    ```
    Usage:
-   ./psapirun [options] <cmd> [args]
+   ./mitosrun [options] <cmd> [args]
        [options]:
            -o filename (default samples.out)
            -b sample buffer size (default 4096)
@@ -61,38 +61,38 @@ PSAPI requires:
        [args]: command arguments
    ```
 
-3. Run `psapiprocess` on the memory samples file, supplying a binary 
+3. Run `mitosprocess` on the memory samples file, supplying a binary 
    with debug information (compiled with -g) to generate a new output
    file with source and line information. For example:
 
    ```
-   psapiprocess samples.out ./a.out
+   mitosprocess samples.out ./a.out
    ```
 
    Where `a.out` is some binary with debug information and `samples.out`
-   was obtained by executing `psapirun ./a.out`. The above command
+   was obtained by executing `mitosrun ./a.out`. The above command
    will produce a new file, `processed_samples.out`, which contains
    the same samples plus source files and line numbers
    associated with each sample.
 
-   `psapiprocess` also accepts the following parameters:
+   `mitosprocess` also accepts the following parameters:
 
    ```
    Usage:
-   ./psapiprocess [options] <sample_file> <debug_binary>
+   ./mitosprocess [options] <sample_file> <debug_binary>
        [options]:
            -o filename (default processed_<sample_file>)
-       <sample_file>: a csv file created using psapirun
-       <debug_binary>: the binary executed with psapirun (must contain debug symbols to be useful)
+       <sample_file>: a csv file created using mitosrun
+       <debug_binary>: the binary executed with mitosrun (must contain debug symbols to be useful)
    ```
 
 # Authors
 
-PSAPI and MemAxes were written by Alfredo Gimenez.
+Mitos and MemAxes were written by Alfredo Gimenez.
 
 # License
 
-PSAPI is released as part of MemAxes under an LGPL license. For more
+Mitos is released as part of MemAxes under an LGPL license. For more
 details see the LICENSE file.
 
 `LLNL-CODE-663358`

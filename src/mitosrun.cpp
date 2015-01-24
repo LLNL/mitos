@@ -7,7 +7,7 @@
 #include <vector>
 #include <cstdlib>
 
-#include "PSAPI.h"
+#include "Mitos.h"
 
 size_t bufsz;
 uint64_t period;
@@ -175,21 +175,21 @@ int main(int argc, char **argv)
 
         dump_header();
 
-        PSAPI_set_sample_mode(SMPL_MEMORY);
+        Mitos_set_sample_mode(SMPL_MEMORY);
 
-        PSAPI_set_sample_period(period);
-        PSAPI_set_sample_threshold(thresh);
+        Mitos_set_sample_period(period);
+        Mitos_set_sample_threshold(thresh);
 
-        PSAPI_set_handler(&sample_handler);
+        Mitos_set_handler(&sample_handler);
 
-        PSAPI_prepare(child);
+        Mitos_prepare(child);
 
-        PSAPI_begin_sampler();
+        Mitos_begin_sampler();
         {
             ptrace(PTRACE_CONT,child,0,0);
             wait(&status);
         }
-        PSAPI_end_sampler();
+        Mitos_end_sampler();
 
         dump_samples(); // anything left over
     }

@@ -1,5 +1,5 @@
-set(SRC_FILES perfsmpl.cpp mattr.cpp PSAPI.cpp)
-set(HDR_FILES perfsmpl.h mattr.h PSAPI.h)
+set(SRC_FILES perfsmpl.cpp mattr.cpp Mitos.cpp)
+set(HDR_FILES perfsmpl.h mattr.h Mitos.h)
 
 # Add shared and static libs
 add_library(perfsmpl SHARED ${SRC_FILES})
@@ -9,17 +9,17 @@ add_library(perfsmpl_static STATIC ${SRC_FILES})
 set_target_properties(perfsmpl_static PROPERTIES OUTPUT_NAME perfsmpl)
 
 add_executable(test test.cpp)
-add_executable(psapirun psapirun.cpp)
-add_executable(psapiprocess psapiprocess.cpp)
+add_executable(mitosrun mitosrun.cpp)
+add_executable(mitosprocess mitosprocess.cpp)
 
 target_link_libraries(perfsmpl ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(test perfsmpl symtabAPI)
-target_link_libraries(psapirun perfsmpl)
-target_link_libraries(psapiprocess perfsmpl symtabAPI)
+target_link_libraries(mitosrun perfsmpl)
+target_link_libraries(mitosprocess perfsmpl symtabAPI)
 
 include_directories(${DYNINST_INCLUDE_DIR})
 
 # Install paspirun and the libraries.
-install(TARGETS psapirun DESTINATION bin)
-install(TARGETS psapiprocess DESTINATION bin)
+install(TARGETS mitosrun DESTINATION bin)
+install(TARGETS mitosprocess DESTINATION bin)
 install(TARGETS perfsmpl perfsmpl_static DESTINATION lib)

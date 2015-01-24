@@ -7,7 +7,7 @@
 using namespace Dyninst;
 using namespace SymtabAPI;
 
-#include "PSAPI.h"
+#include "Mitos.h"
 
 std::vector<perf_event_sample> samples;
 
@@ -50,9 +50,9 @@ void workit()
     b = (double*)malloc(sizeof(double)*N*N);
     c = (double*)malloc(sizeof(double)*N*N);
 
-    PSAPI_add_symbol("a",a,sizeof(double),N*N);
-    PSAPI_add_symbol("b",b,sizeof(double),N*N);
-    PSAPI_add_symbol("c",c,sizeof(double),N*N);
+    Mitos_add_symbol("a",a,sizeof(double),N*N);
+    Mitos_add_symbol("b",b,sizeof(double),N*N);
+    Mitos_add_symbol("c",c,sizeof(double),N*N);
 
     for(i=0; i<N; ++i)
         for(j=0; j<N; ++j)
@@ -69,14 +69,14 @@ int main(int argc, char **argv)
 {
     cmd = argv[0];
 
-    PSAPI_set_sample_mode(SMPL_MEMORY);
-    PSAPI_set_handler(&sample_handler);
+    Mitos_set_sample_mode(SMPL_MEMORY);
+    Mitos_set_handler(&sample_handler);
 
-    PSAPI_prepare();
+    Mitos_prepare();
 
-    PSAPI_begin_sampler();
+    Mitos_begin_sampler();
     workit();
-    PSAPI_end_sampler();
+    Mitos_end_sampler();
 
     dump();
 }

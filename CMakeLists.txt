@@ -1,4 +1,4 @@
-project(perfsmpl C CXX)
+project(Mitos C CXX)
 cmake_minimum_required(VERSION 2.8)
 
 # Include project-local cmake files.

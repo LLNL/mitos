@@ -83,8 +83,8 @@ void usage(char **argv)
     cerr << argv[0] << " [options] <sample_file> <debug_binary>" << endl;
     cerr << "    [options]:" << endl;
     cerr << "        -o filename (default processed_<sample_file>)" << endl;
-    cerr << "    <sample_file>: a csv file created using psapirun" << endl;
-    cerr << "    <debug_binary>: the binary executed with psapirun (must contain debug symbols to be useful)" << endl;
+    cerr << "    <sample_file>: a csv file created using mitosrun" << endl;
+    cerr << "    <debug_binary>: the binary executed with mitosrun (must contain debug symbols to be useful)" << endl;
 }
 
 void set_defaults()
