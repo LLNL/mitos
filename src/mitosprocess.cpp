@@ -1,10 +1,16 @@
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <iostream>
 #include <string>
+#include <vector>
 #include <fstream>
 #include <sstream>
 using namespace std;
+
+#include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/classification.hpp>
 
 #include <Symtab.h>
 #include <LineInformation.h>
@@ -20,20 +26,50 @@ ofstream fout;
 Symtab *obj;
 
 int ip_idx;
+bool is_mpi = false;
+int taskid;
+string hostname;
 
 int dump_header()
 {
-    string hdr;
-    getline(fin,hdr);
-    fout << "source,line," << hdr << std::endl;
+    string linestr;
+    istringstream ssIn;
+    vector<string> tokens;
 
-    string tok;
-    istringstream sshdr(hdr);
+    getline(fin,linestr);
+
+    if(linestr.compare(0,3,"MPI") == 0)
+    {
+        is_mpi = true;
+        boost::split(tokens,linestr,boost::is_any_of("\n:"),boost::token_compress_on);
+
+        // MPI Host
+        boost::trim(tokens[1]);
+        hostname = tokens[1];
+        tokens.clear();
+
+        // MPI Comm Rank
+        getline(fin,linestr);
+        boost::split(tokens,linestr,boost::is_any_of("\n:"),boost::token_compress_on);
+        boost::trim(tokens[1]);
+        taskid = boost::lexical_cast<int>(tokens[1]);
+        tokens.clear();
+        
+        fout << "mpi_host,mpi_task,";
+
+        getline(fin,linestr);
+    }
+
+    // Tuple header
+    ssIn.str(linestr);
+    boost::split(tokens,linestr,boost::is_any_of(","),boost::token_compress_on);
+
+    fout << "source,line," << linestr << std::endl;
 
     ip_idx = 0;
-    while(getline(sshdr,tok,','))
+    for(int i=0; i<tokens.size(); i++)
     {
-        if(tok == "ip")
+        if(tokens[i] == "ip")
             return 0;
         ip_idx++;
     }
@@ -61,6 +97,12 @@ void dump_samples()
 
         std::vector<Statement*> stats;
         sym_success = obj->getSourceLines(stats,ip);
+
+        if(is_mpi)
+        {
+            fout << hostname << ",";
+            fout << taskid << ",";
+        }
 
         if(sym_success)
         {

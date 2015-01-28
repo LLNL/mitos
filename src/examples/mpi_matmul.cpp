@@ -15,14 +15,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define NRA 62                 /* number of rows in matrix A */
-#define NCA 15                 /* number of columns in matrix A */
-#define NCB 7                  /* number of columns in matrix B */
+#define NRA 1024                 /* number of rows in matrix A */
+#define NCA 1024                 /* number of columns in matrix A */
+#define NCB 512                  /* number of columns in matrix B */
 #define MASTER 0               /* taskid of first task */
 #define FROM_MASTER 1          /* setting a message type */
 #define FROM_WORKER 2          /* setting a message type */
-
-#include "mpi_hook.h"
 
 int main (int argc, char *argv[])
 {
