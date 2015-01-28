@@ -70,7 +70,7 @@ int main(int argc, char **argv)
     cmd = argv[0];
 
     Mitos_set_sample_mode(SMPL_MEMORY);
-    Mitos_set_handler(&sample_handler);
+    Mitos_set_handler_fn(&sample_handler);
 
     Mitos_prepare();
 

@@ -180,7 +180,7 @@ int main(int argc, char **argv)
         Mitos_set_sample_period(period);
         Mitos_set_sample_threshold(thresh);
 
-        Mitos_set_handler(&sample_handler);
+        Mitos_set_handler_fn(&sample_handler);
 
         Mitos_prepare(child);
 

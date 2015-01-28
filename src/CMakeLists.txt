@@ -7,13 +7,13 @@ add_library(mitos SHARED ${SRC_FILES})
 include_directories(${MPI_INCLUDE_PATH})
 
 add_executable(test test.cpp)
-add_executable(mpi_hello mpi_hello.c)
+add_executable(mpi_matmul mpi_matmul.cpp mpi_hook.cpp)
 add_executable(mitosrun mitosrun.cpp)
 add_executable(mitosprocess mitosprocess.cpp)
 
 target_link_libraries(mitos ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(test mitos symtabAPI)
-target_link_libraries(mpi_hello mitos ${MPI_LIBRARIES})
+target_link_libraries(mpi_matmul mitos ${MPI_LIBRARIES})
 target_link_libraries(mitosrun mitos)
 target_link_libraries(mitosprocess mitos symtabAPI)
 

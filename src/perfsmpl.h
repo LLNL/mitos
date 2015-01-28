@@ -17,6 +17,8 @@ class perfsmpl;
 class perf_event_sample;
 
 typedef void (*sample_handler_fn_t)(perf_event_sample *sample, void *args);
+typedef void (*end_fn_t)(void *args);
+
 void* sample_reader_fn(void *args);
 
 enum sample_mode
@@ -44,7 +46,8 @@ public:
     void set_sample_period(uint64_t p) { sample_period = p; }
     void set_sample_threshold(uint64_t t) { sample_threshold = t; }
 
-    void set_handler(sample_handler_fn_t h, void* args) { handler = h; handler_args = args; custom_handler = 1; }
+    void set_handler_fn(sample_handler_fn_t h, void* args) { handler_fn = h; handler_fn_args = args; handler_fn_defined = 1; }
+    void set_end_fn(end_fn_t h, void* args) { end_fn = h; end_fn_args = args; end_fn_defined = 1; }
 
     inline bool has_attribute(int attr) { return this->pe.sample_type & attr; }
 
@@ -70,7 +73,6 @@ private:
     int stop;
 
     int mode;
-    int custom_handler;
 
     // perf_event variables
     int fd;
@@ -95,8 +97,13 @@ private:
 
     pthread_t sample_reader_thr;
 
-    sample_handler_fn_t handler;
-    void *handler_args;
+    sample_handler_fn_t handler_fn;
+    void *handler_fn_args;
+    int handler_fn_defined;
+
+    end_fn_t end_fn;
+    void *end_fn_args;
+    int end_fn_defined;
 };
 
 class perf_event_sample {

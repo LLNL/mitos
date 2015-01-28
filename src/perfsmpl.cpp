@@ -27,7 +27,8 @@ perfsmpl::perfsmpl()
     stop = 0;
 
     mPID = 0;
-    custom_handler = 0;
+    handler_fn_defined = 0;
+    end_fn_defined = 0;
 
     collected_samples = 0;
     lost_samples = 0;
@@ -180,6 +181,11 @@ void perfsmpl::end_sampler()
     read(fd, &counter_value, sizeof(uint64_t));
 
     process_sample_buffer(); // flush out remaining samples
+
+    if(end_fn_defined)
+    {
+        end_fn(end_fn_args);
+    }
 }
 
 int perfsmpl::process_single_sample(struct perf_event_mmap_page *mmap_buf)
@@ -256,9 +262,9 @@ int perfsmpl::process_single_sample(struct perf_event_mmap_page *mmap_buf)
         read_mmap_buffer(mmap_buf,(char*)&sample->data_src,sizeof(uint64_t));
     }
 
-    if(custom_handler)
+    if(handler_fn_defined)
     {
-        handler(sample,handler_args);
+        handler_fn(sample,handler_fn_args);
     }
 
     return ret;
