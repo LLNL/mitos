@@ -1,11 +1,18 @@
 #include "perfsmpl.h"
 
+#include <poll.h>
+
 void *sample_reader_fn(void *args)
 {
     perfsmpl *pep = (perfsmpl*)args;
 
+    struct pollfd pfd;
+    pfd.fd = pep->fd;
+    pfd.events = POLLIN;
+
     while(!pep->stop)
     {
+        poll(&pfd, 1, 0);
         pep->process_sample_buffer();
     }
 
@@ -58,6 +65,7 @@ void perfsmpl::init_attr()
     pe.exclude_guest = 1;
     pe.pinned = 0;
     pe.sample_id_all = 0;
+    pe.wakeup_events = 1;
 
     pe.sample_period = sample_period;
     pe.freq = 0;
