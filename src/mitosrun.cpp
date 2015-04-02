@@ -24,7 +24,7 @@ std::vector<perf_event_sample> samples;
 
 void dump_header()
 {
-    fout << "variable,ip,time,latency,dataSource,address,cpu" << std::endl;
+    fout << "variable,ip,time,latency,dataSource,hit,address,cpu" << std::endl;
 }
 
 void dump_samples()
@@ -35,7 +35,8 @@ void dump_samples()
         fout << std::hex << samples[i].ip << ",";
         fout << std::hex << samples[i].time << ",";
         fout << std::dec << samples[i].weight << ",";
-        fout << std::hex << samples[i].data_src << ",";
+        fout << std::hex << samples[i].dataSourceString() << ",";
+        fout << std::hex << samples[i].hitOrMiss() << ",";
         fout << std::hex << samples[i].addr << ",";
         fout << std::dec << samples[i].cpu << std::endl;
     }

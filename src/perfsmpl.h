@@ -113,6 +113,8 @@ class perf_event_sample {
 public:
     perf_event_sample() { memset(this,0,sizeof(class perf_event_sample)); }
     inline bool has_attribute(int attr) { return parent->has_attribute(attr); }
+    const char* hitOrMiss();
+    const char* dataSourceString();
 
 private:
     perfsmpl *parent;

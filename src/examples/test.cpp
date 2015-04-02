@@ -16,7 +16,7 @@ char* cmd;
 void dump()
 {
     // Header
-    std::cout << "variable,ip,time,latency,dataSource,address,cpu" << std::endl;
+    std::cout << "variable,ip,time,latency,dataSource,hit,address,cpu" << std::endl;
 
     // Tuples
     for(size_t i=0; i<samples.size(); i++)
@@ -25,7 +25,8 @@ void dump()
         std::cout << std::hex << samples[i].ip << ",";
         std::cout << std::hex << samples[i].time << ",";
         std::cout << std::dec << samples[i].weight << ",";
-        std::cout << std::hex << samples[i].data_src << ",";
+        std::cout << std::hex << samples[i].dataSourceString() << ",";
+        std::cout << std::hex << samples[i].hitOrMiss() << ",";
         std::cout << std::hex << samples[i].addr << ",";
         std::cout << std::dec << samples[i].cpu << std::endl;
     }

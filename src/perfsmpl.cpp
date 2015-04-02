@@ -357,3 +357,48 @@ void perfsmpl::process_freq_sample(struct perf_event_mmap_page *mmap_buf)
 	ret = read_mmap_buffer(mmap_buf,(char*)&thr, sizeof(thr));
 }
 
+const char* perf_event_sample::hitOrMiss()
+{
+    uint64_t lvl_bits = data_src >> PERF_MEM_LVL_SHIFT;
+
+    if(lvl_bits & PERF_MEM_LVL_NA)
+        return "Not Available";
+    else if(lvl_bits & PERF_MEM_LVL_HIT)
+        return "Hit";
+    else if(lvl_bits & PERF_MEM_LVL_MISS)
+        return "Miss";
+
+    return "Invalid Data Source";
+}
+
+const char* perf_event_sample::dataSourceString()
+{
+    uint64_t lvl_bits = data_src >> PERF_MEM_LVL_SHIFT;
+
+    if(lvl_bits & PERF_MEM_LVL_NA)
+        return "Not Available";
+    else if(lvl_bits & PERF_MEM_LVL_L1)
+        return "L1";
+    else if(lvl_bits & PERF_MEM_LVL_LFB)
+        return "LFB";
+    else if(lvl_bits & PERF_MEM_LVL_L2)
+        return "L2";
+    else if(lvl_bits & PERF_MEM_LVL_L3)
+        return "L3";
+    else if(lvl_bits & PERF_MEM_LVL_LOC_RAM)
+        return "Local RAM";
+    else if(lvl_bits & PERF_MEM_LVL_REM_RAM1)
+        return "Remote RAM 1 Hop";
+    else if(lvl_bits & PERF_MEM_LVL_REM_RAM2)
+        return "Remote RAM 2 Hops";
+    else if(lvl_bits & PERF_MEM_LVL_REM_CCE1)
+        return "Remote Cache 1 Hops";
+    else if(lvl_bits & PERF_MEM_LVL_REM_CCE2)
+        return "Remote Cache 2 Hops";
+    else if(lvl_bits & PERF_MEM_LVL_IO)
+        return "I/O Memory";
+    else if(lvl_bits & PERF_MEM_LVL_UNC)
+        return "Uncached Memory";
+
+    return "Invalid Data Source";
+}
