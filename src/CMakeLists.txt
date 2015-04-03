@@ -1,10 +1,3 @@
-# Packages required
-find_package(Threads REQUIRED)
-find_package(PerfEvents REQUIRED)
-find_package(MPI REQUIRED)
-find_package(Boost REQUIRED)
-find_package(Dyninst REQUIRED SymtabAPI)
-
 # Include dirs required
 include_directories(${MPI_INCLUDE_PATH})
 include_directories(${DYNINST_INCLUDE_DIR})
@@ -33,15 +26,13 @@ target_link_libraries(mitosrun mitos)
 target_link_libraries(mitosmpirun mitos mitosmpihook)
 target_link_libraries(mitosprocess mitos symtabAPI)
 
-# Installation
-install(FILES ${MITOS_HDR_FILES} 
-        DESTINATION "${INSTALL_INCLUDE_DIR}/Mitos" COMPONENT dev)
-
-install(TARGETS mitos mitosmpihook
-        EXPORT MitosTargets 
-        DESTINATION "${INSTALL_LIB_DIR}" COMPONENT shlib)
-
+# Install
+install(FILES ${MITOS_HDR_FILES}
+        DESTINATION "include/Mitos")
 install(TARGETS mitosrun mitosmpirun mitosprocess
         EXPORT MitosTargets
-        DESTINATION "${INSTALL_BIN_DIR}" COMPONENT bin)
+        DESTINATION "bin")
+install(TARGETS mitos mitosmpihook
+        EXPORT MitosTargets
+        DESTINATION "lib")
 

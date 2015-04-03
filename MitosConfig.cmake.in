@@ -1,18 +1,5 @@
-# - Config file for the Mitos package
-# It defines the following variables
-#  MITOS_INCLUDE_DIRS - include directories for Mitos
-#  MITOS_LIBRARIES    - libraries to link against
-#  MITOS_EXECUTABLE   - the bar executable
- 
-# Compute paths
-get_filename_component(MITOS_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-set(MITOS_INCLUDE_DIRS "@CONF_INCLUDE_DIRS@")
- 
-# Our library dependencies
-#if(NOT TARGET foo AND NOT Mitos_BINARY_DIR)
-#  include("${MITOS_CMAKE_DIR}/MitosTargets.cmake")
-#endif()
- 
-# These are IMPORTED targets created by MitosTargets.cmake
+# Variables for export
+set(MITOS_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/include)
 set(MITOS_LIBRARIES mitos mitosmpihook)
 set(MITOS_EXECUTABLE mitosrun mitosmpirun mitosprocess)
+
