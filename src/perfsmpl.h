@@ -1,3 +1,6 @@
+#ifndef PERFSMPL_H
+#define PERFSMPL_H
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -19,13 +22,13 @@ class perf_event_sample;
 typedef void (*sample_handler_fn_t)(perf_event_sample *sample, void *args);
 typedef void (*end_fn_t)(void *args);
 
-void* sample_reader_fn(void *args);
-
 enum sample_mode
 {
     SMPL_MEMORY,
     SMPL_INSTRUCTIONS
 };
+
+void* sample_reader_fn(void *args);
 
 class perfsmpl
 {
@@ -149,3 +152,4 @@ public:
     uint64_t   transaction;/* if PERF_SAMPLE_TRANSACTION */
 };
 
+#endif

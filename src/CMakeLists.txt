@@ -20,6 +20,7 @@ target_link_libraries(mitosmpirun mitos mitosmpihook)
 target_link_libraries(mitosprocess mitos symtabAPI)
 
 # Install mitosrun, mitosprocess, and the libraries.
+install(FILES Mitos.h perfsmpl.h mattr.h DESTINATION include)
 install(TARGETS mitos DESTINATION lib)
 install(TARGETS mitosmpihook DESTINATION lib)
 install(TARGETS mitosrun DESTINATION bin)

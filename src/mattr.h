@@ -1,3 +1,6 @@
+#ifndef MATTR_H
+#define MATTR_H
+
 #include <inttypes.h>
 
 #include <map>
@@ -65,3 +68,4 @@ class mattr
         mem_symbol_splay_tree syms;
 };
 
+#endif
