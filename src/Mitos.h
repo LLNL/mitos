@@ -19,8 +19,7 @@ extern "C" {
     void Mitos_set_handler_fn(sample_handler_fn_t h, void *args=NULL);
     void Mitos_set_end_fn(end_fn_t h, void *args=NULL);
 
-    void Mitos_prepare();
-    void Mitos_prepare(pid_t pid);
+    void Mitos_prepare(pid_t pid=0);
     void Mitos_begin_sampler();
     void Mitos_end_sampler();
 

@@ -135,8 +135,10 @@ int perfsmpl::init_perf()
     return 0;
 }
 
-int perfsmpl::prepare()
+int perfsmpl::prepare(pid_t p)
 {
+    mPID = p;
+
     init_attr();
 
     ret = init_perf();

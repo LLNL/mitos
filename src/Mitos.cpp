@@ -31,11 +31,6 @@ void Mitos_set_end_fn(end_fn_t h, void* args)
     m_perfsmpl.set_end_fn(h,args); 
 }
 
-void Mitos_prepare() 
-{
-    m_perfsmpl.prepare(); 
-}
-
 void Mitos_prepare(pid_t pid) 
 {
     m_perfsmpl.prepare(pid); 

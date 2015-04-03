@@ -39,8 +39,7 @@ public:
     perfsmpl();
     ~perfsmpl();
 
-    int prepare();
-    void prepare(pid_t PID) { mPID=PID; prepare(); }
+    int prepare(pid_t PID);
 
     int begin_sampler();
     void end_sampler();
