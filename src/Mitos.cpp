@@ -70,21 +70,36 @@ void Mitos_resolve_symbol(struct perf_event_sample *s)
 
 size_t Mitos_x_index(struct perf_event_sample *s)
 {
-    if(s->access_index && s->num_dims > 0)
-        return s->access_index[0];
+    if(s->access_index)
+    {
+        if(s->num_dims > 0)
+            return s->access_index[0];
+        else
+            return 0;
+    }
     return -1;
 }
 
 size_t Mitos_y_index(struct perf_event_sample *s)
 {
-    if(s->access_index && s->num_dims > 1)
-        return s->access_index[1];
+    if(s->access_index)
+    {
+        if(s->num_dims > 1)
+            return s->access_index[1];
+        else
+            return 0;
+    }
     return -1;
 }
 
 size_t Mitos_z_index(struct perf_event_sample *s)
 {
-    if(s->access_index && s->num_dims > 2)
-        return s->access_index[2];
+    if(s->access_index)
+    {
+        if(s->num_dims > 2)
+            return s->access_index[2];
+        else
+            return 0;
+    }
     return -1;
 }
