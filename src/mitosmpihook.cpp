@@ -7,9 +7,8 @@
 #include <iostream>
 using namespace std;
 
-#include "mitosmpihook.h"
-
 #include "Mitos.h"
+#include "mitosmpihook.h"
 
 ofstream fout;
 vector<perf_event_sample> samples;

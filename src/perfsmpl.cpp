@@ -211,7 +211,7 @@ int perfsmpl::process_single_sample(struct perf_event_mmap_page *mmap_buf)
 
     // Create and fill up a new sample
     perf_event_sample *sample = new perf_event_sample();
-    sample->parent = this;
+    //sample->parent = this;
 
     if(has_attribute(PERF_SAMPLE_IP))
     {
@@ -367,9 +367,9 @@ void perfsmpl::process_freq_sample(struct perf_event_mmap_page *mmap_buf)
 	ret = read_mmap_buffer(mmap_buf,(char*)&thr, sizeof(thr));
 }
 
-const char* perf_event_sample::hitOrMiss()
+const char* Mitos_hit_type(struct perf_event_sample *s)
 {
-    uint64_t lvl_bits = data_src >> PERF_MEM_LVL_SHIFT;
+    uint64_t lvl_bits = s->data_src >> PERF_MEM_LVL_SHIFT;
 
     if(lvl_bits & PERF_MEM_LVL_NA)
         return "Not Available";
@@ -381,9 +381,9 @@ const char* perf_event_sample::hitOrMiss()
     return "Invalid Data Source";
 }
 
-const char* perf_event_sample::dataSourceString()
+const char* Mitos_data_source(struct perf_event_sample *s)
 {
-    uint64_t lvl_bits = data_src >> PERF_MEM_LVL_SHIFT;
+    uint64_t lvl_bits = s->data_src >> PERF_MEM_LVL_SHIFT;
 
     if(lvl_bits & PERF_MEM_LVL_NA)
         return "Not Available";
@@ -412,3 +412,4 @@ const char* perf_event_sample::dataSourceString()
 
     return "Invalid Data Source";
 }
+

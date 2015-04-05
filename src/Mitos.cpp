@@ -46,11 +46,45 @@ void Mitos_end_sampler()
     m_perfsmpl.end_sampler(); 
 }
 
-void Mitos_add_symbol(std::string n, void *a, size_t s, size_t l) {
-    m_mattr.add_symbol(n,a,s,l); 
+void Mitos_add_symbol(const char* n, void *a, size_t s, size_t *dims, unsigned int ndims)
+{
+    m_mattr.add_symbol(n,a,s,dims,ndims); 
 }
 
-mem_symbol* Mitos_find_symbol(uint64_t addr) 
+void Mitos_resolve_symbol(struct perf_event_sample *s)
 {
-    return m_mattr.find_symbol(addr); 
+    mem_symbol *m = m_mattr.find_symbol(s->addr);
+    if(m)
+    {
+        s->num_dims = m->get_num_dims();
+        s->access_index = m->get_index(s->addr);
+        s->data_symbol = m->get_name();
+    }
+    else
+    {
+        s->num_dims = 1;
+        s->access_index = NULL;
+        s->data_symbol = "??";
+    }
+}
+
+size_t Mitos_x_index(struct perf_event_sample *s)
+{
+    if(s->access_index && s->num_dims > 0)
+        return s->access_index[0];
+    return -1;
+}
+
+size_t Mitos_y_index(struct perf_event_sample *s)
+{
+    if(s->access_index && s->num_dims > 1)
+        return s->access_index[1];
+    return -1;
+}
+
+size_t Mitos_z_index(struct perf_event_sample *s)
+{
+    if(s->access_index && s->num_dims > 2)
+        return s->access_index[2];
+    return -1;
 }

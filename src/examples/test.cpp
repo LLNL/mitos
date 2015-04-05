@@ -2,11 +2,6 @@
 #include <fstream>
 #include <vector>
 
-#include <Symtab.h>
-#include <LineInformation.h>
-using namespace Dyninst;
-using namespace SymtabAPI;
-
 #include "Mitos.h"
 
 std::vector<perf_event_sample> samples;
@@ -16,25 +11,47 @@ char* cmd;
 void dump()
 {
     // Header
-    std::cout << "variable,ip,time,latency,dataSource,hit,address,cpu" << std::endl;
+    std::cout << "variable,xidx,yidx,ip,time,latency,dataSource,hit,address,cpu" << std::endl;
 
     // Tuples
     for(size_t i=0; i<samples.size(); i++)
     {
-        std::cout << "??,"; // variable
-        std::cout << std::hex << samples[i].ip << ",";
-        std::cout << std::hex << samples[i].time << ",";
-        std::cout << std::dec << samples[i].weight << ",";
-        std::cout << std::hex << samples[i].dataSourceString() << ",";
-        std::cout << std::hex << samples[i].hitOrMiss() << ",";
-        std::cout << std::hex << samples[i].addr << ",";
+        std::cout << samples[i].data_symbol;
+        std::cout << ",";
+        if(samples[i].access_index)
+        {
+            std::cout << std::dec << samples[i].access_index[0];
+            std::cout << ",";
+            std::cout << std::dec << samples[i].access_index[1];
+        }
+        else
+        {
+            std::cout << std::dec << -1;
+            std::cout << ",";
+            std::cout << std::dec << -1;
+        }
+        std::cout << ",";
+        std::cout << std::hex << samples[i].ip ;
+        std::cout << ",";
+        std::cout << std::hex << samples[i].time ;
+        std::cout << ",";
+        std::cout << std::dec << samples[i].weight ;
+        std::cout << ",";
+        std::cout << std::hex << Mitos_data_source(&samples[i]) ;
+        std::cout << ",";
+        std::cout << std::hex << Mitos_hit_type(&samples[i]) ;
+        std::cout << ",";
+        std::cout << std::hex << samples[i].addr ;
+        std::cout << ",";
         std::cout << std::dec << samples[i].cpu << std::endl;
+        std::cout << std::endl;
     }
 }
 
 void sample_handler(perf_event_sample *sample, void *args)
 {
-   samples.push_back(*sample);
+    Mitos_resolve_symbol(sample);
+    samples.push_back(*sample);
 }
 
 void workit()
@@ -51,9 +68,13 @@ void workit()
     b = (double*)malloc(sizeof(double)*N*N);
     c = (double*)malloc(sizeof(double)*N*N);
 
-    Mitos_add_symbol("a",a,sizeof(double),N*N);
-    Mitos_add_symbol("b",b,sizeof(double),N*N);
-    Mitos_add_symbol("c",c,sizeof(double),N*N);
+    size_t dims[2];
+    dims[0] = N;
+    dims[1] = N;
+
+    Mitos_add_symbol("a",a,sizeof(double),dims,2);
+    Mitos_add_symbol("b",b,sizeof(double),dims,2);
+    Mitos_add_symbol("c",c,sizeof(double),dims,2);
 
     for(i=0; i<N; ++i)
         for(j=0; j<N; ++j)
@@ -71,9 +92,9 @@ int main(int argc, char **argv)
     cmd = argv[0];
 
     Mitos_set_sample_mode(SMPL_MEMORY);
-    Mitos_set_handler_fn(&sample_handler);
+    Mitos_set_handler_fn(&sample_handler,NULL);
 
-    Mitos_prepare();
+    Mitos_prepare(0);
 
     Mitos_begin_sampler();
     workit();

@@ -5,9 +5,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <inttypes.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-#include <inttypes.h>
 #include <linux/perf_event.h>
 #include <asm/unistd.h>
 #include <pthread.h>
@@ -16,17 +16,7 @@
 #include <iomanip>
 #include <vector>
 
-class perfsmpl;
-class perf_event_sample;
-
-typedef void (*sample_handler_fn_t)(perf_event_sample *sample, void *args);
-typedef void (*end_fn_t)(void *args);
-
-enum sample_mode
-{
-    SMPL_MEMORY,
-    SMPL_INSTRUCTIONS
-};
+#include "Mitos.h"
 
 void* sample_reader_fn(void *args);
 
@@ -106,49 +96,6 @@ private:
     end_fn_t end_fn;
     void *end_fn_args;
     int end_fn_defined;
-};
-
-class perf_event_sample {
-
-    friend class perfsmpl;
-
-public:
-    perf_event_sample() { memset(this,0,sizeof(class perf_event_sample)); }
-    inline bool has_attribute(int attr) { return parent->has_attribute(attr); }
-    const char* hitOrMiss();
-    const char* dataSourceString();
-
-private:
-    perfsmpl *parent;
-
-public:
-    // Raw perf_event sample data
-
-    //struct perf_event_header header;
-    uint64_t   sample_id;  /* if PERF_SAMPLE_IDENTIFIER */
-    uint64_t   ip;         /* if PERF_SAMPLE_IP */
-    uint32_t   pid, tid;   /* if PERF_SAMPLE_TID */
-    uint64_t   time;       /* if PERF_SAMPLE_TIME */
-    uint64_t   addr;       /* if PERF_SAMPLE_ADDR */
-    uint64_t   id;         /* if PERF_SAMPLE_ID */
-    uint64_t   stream_id;  /* if PERF_SAMPLE_STREAM_ID */
-    uint32_t   cpu, res;   /* if PERF_SAMPLE_CPU */
-    uint64_t   period;     /* if PERF_SAMPLE_PERIOD */
-    //struct read_format v; /* if PERF_SAMPLE_READ */
-    uint64_t   nr;         /* if PERF_SAMPLE_CALLCHAIN */
-    uint64_t  *ips;    /* if PERF_SAMPLE_CALLCHAIN */
-    uint32_t   raw_size;       /* if PERF_SAMPLE_RAW */
-    char      *raw_data; /* if PERF_SAMPLE_RAW */
-    uint64_t   bnr;        /* if PERF_SAMPLE_BRANCH_STACK */
-    //struct perf_branch_entry *lbr; /* if PERF_SAMPLE_BRANCH_STACK */
-    uint64_t   abi;        /* if PERF_SAMPLE_REGS_USER */
-    uint64_t  *regs; /* if PERF_SAMPLE_REGS_USER */
-    uint64_t   stack_size;       /* if PERF_SAMPLE_STACK_USER */
-    char      *stack_data; /* if PERF_SAMPLE_STACK_USER */
-    uint64_t   dyn_size;   /* if PERF_SAMPLE_STACK_USER */
-    uint64_t   weight;     /* if PERF_SAMPLE_WEIGHT */
-    uint64_t   data_src;   /* if PERF_SAMPLE_DATA_SRC */
-    uint64_t   transaction;/* if PERF_SAMPLE_TRANSACTION */
 };
 
 #endif

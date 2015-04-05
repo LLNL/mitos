@@ -35,8 +35,8 @@ void dump_samples()
         fout << std::hex << samples[i].ip << ",";
         fout << std::hex << samples[i].time << ",";
         fout << std::dec << samples[i].weight << ",";
-        fout << std::hex << samples[i].dataSourceString() << ",";
-        fout << std::hex << samples[i].hitOrMiss() << ",";
+        fout << std::hex << Mitos_data_source(&samples[i]) << ",";
+        fout << std::hex << Mitos_hit_type(&samples[i]) << ",";
         fout << std::hex << samples[i].addr << ",";
         fout << std::dec << samples[i].cpu << std::endl;
     }
@@ -181,7 +181,7 @@ int main(int argc, char **argv)
         Mitos_set_sample_period(period);
         Mitos_set_sample_threshold(thresh);
 
-        Mitos_set_handler_fn(&sample_handler);
+        Mitos_set_handler_fn(&sample_handler,NULL);
 
         Mitos_prepare(child);
 

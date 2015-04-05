@@ -1,18 +1,28 @@
 #include "mattr.h"
 
+#include <stdlib.h>
+#include <string.h>
+
 mem_symbol::mem_symbol()
 {
 
 }
 
-mem_symbol::mem_symbol(std::string n, uint64_t a, size_t s, size_t l)
+mem_symbol::mem_symbol(const char* n, uint64_t a, size_t s, size_t *d, unsigned int nd)
     :
-    name(n),
     addr(a),
     sz(s),
-    len(l)
+    num_dims(nd)
 {
+    name = strdup(n);
+    dims = (size_t*)malloc(sizeof(size_t)*num_dims);
 
+    len = 1;
+    for(int i=0; i<num_dims; i++)
+    {
+        dims[i] = d[i];
+        len *= dims[i];
+    }
 }
 
 mem_symbol::~mem_symbol()
@@ -23,6 +33,23 @@ mem_symbol::~mem_symbol()
 bool mem_symbol::contains(uint64_t addr)
 {
     return this->addr <= addr &&  addr < this->addr+sz*len;
+}
+
+#include <iostream>
+#define DBGVAR(x) std::cerr << #x << " : " << x << std::endl;
+
+size_t* mem_symbol::get_index(uint64_t a) 
+{
+    unsigned int idx = (a-addr)/sz;
+
+    size_t *d = (size_t*)malloc(sizeof(size_t)*num_dims);
+    for(int i=0; i<num_dims; i++)
+    {
+        d[i] = idx % dims[i];
+        idx = idx / dims[i];
+    }
+
+    return d;
 }
 
 mem_symbol_splay_tree::mem_symbol_splay_tree()
@@ -84,10 +111,10 @@ void mattr::add_symbol(mem_symbol m)
     syms.insert(m);
 }
 
-void mattr::add_symbol(std::string n, void *a, size_t s, size_t l)
+void mattr::add_symbol(const char* n, void *a, size_t s, size_t *d, unsigned int nd)
 {
     uint64_t addr = (uint64_t)a;
-    syms.insert(mem_symbol(n,addr,s,l));
+    syms.insert(mem_symbol(n,addr,s,d,nd));
 }
 
 void mattr::add_symbol_vec(std::vector<mem_symbol> &v)
