@@ -18,18 +18,9 @@ void dump()
     {
         std::cout << samples[i].data_symbol;
         std::cout << ",";
-        if(samples[i].access_index)
-        {
-            std::cout << std::dec << samples[i].access_index[0];
-            std::cout << ",";
-            std::cout << std::dec << samples[i].access_index[1];
-        }
-        else
-        {
-            std::cout << std::dec << -1;
-            std::cout << ",";
-            std::cout << std::dec << -1;
-        }
+        std::cout << std::dec << Mitos_x_index(&samples[i]);
+        std::cout << ",";
+        std::cout << std::dec << Mitos_y_index(&samples[i]);
         std::cout << ",";
         std::cout << std::hex << samples[i].ip ;
         std::cout << ",";
