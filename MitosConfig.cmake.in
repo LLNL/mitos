@@ -1,5 +1,0 @@
-# Variables for export
-set(MITOS_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/include)
-set(MITOS_LIBRARIES mitos mitosmpihook)
-set(MITOS_EXECUTABLE mitosrun mitosmpirun mitosprocess)
-

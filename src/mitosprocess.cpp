@@ -14,8 +14,11 @@ using namespace std;
 
 #include <Symtab.h>
 #include <LineInformation.h>
+#include <Instruction.h>
+#include <InstructionDecoder.h>
 using namespace Dyninst;
 using namespace SymtabAPI;
+using namespace InstructionAPI;
 
 char* fout_name;
 char* fin_name;
@@ -24,6 +27,7 @@ char* bin_name;
 ifstream fin;
 ofstream fout;
 Symtab *obj;
+InstructionDecoder *inst;
 
 int ip_idx;
 bool is_mpi = false;
@@ -135,6 +139,18 @@ void set_defaults()
     sprintf(fout_name,"processed_%s",fin_name);
 }
 
+int get_file_contents(const char *filename, std::ostringstream &out)
+{
+    std::ifstream in(filename, std::ios::in | std::ios::binary);
+    if(in)
+    {
+        out << in.rdbuf();
+        in.close();
+        return 0;
+    }
+    return 1;
+}
+
 int parse_args(int argc, char **argv)
 {
     int c;
@@ -194,12 +210,26 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    int sym_success = Symtab::openFile(obj,bin_name);
-    if(!sym_success)
+    int success = Symtab::openFile(obj,bin_name);
+    if(!success)
     {
-        cerr << "Symtab cannot open binary " << bin_name << endl;
-        cerr << "Aborting!" << endl;
-        return 1;
+        cerr << "SymtabAPI cannot open binary " << bin_name << endl;
+        cerr << "Source/Line information will not be available!" << endl;
+    }
+
+    std::ostringstream file_sstream;
+    success = get_file_contents(bin_name,file_sstream);
+    if(success)
+    {
+        cerr << "Can't read in binary file " << bin_name << endl;
+        cerr << "Memory access size information will not be available!" << endl;
+    }
+    else
+    {
+        std::string bin_string = file_sstream.str();
+        inst = new InstructionDecoder(bin_string.c_str(),
+                                      bin_string.size()*sizeof(char),
+                                      obj->getArchitecture());
     }
 
     if(dump_header())

@@ -25,15 +25,15 @@ target_link_libraries(mitos ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(mitosmpihook ${CMAKE_THREAD_LIBS_INIT} ${MPI_LIBRARIES})
 target_link_libraries(mitosrun mitos)
 target_link_libraries(mitosmpirun mitos mitosmpihook)
-target_link_libraries(mitosprocess mitos symtabAPI)
+target_link_libraries(mitosprocess mitos symtabAPI instructionAPI)
 
 # Install
 install(FILES ${MITOS_HDR_PUBLIC}
         DESTINATION "include/Mitos")
 install(TARGETS mitosrun mitosmpirun mitosprocess
-        EXPORT MitosTargets
+        EXPORT MitosConfig
         DESTINATION "bin")
 install(TARGETS mitos mitosmpihook
-        EXPORT MitosTargets
+        EXPORT MitosConfig
         DESTINATION "lib")
 

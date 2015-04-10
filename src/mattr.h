@@ -1,6 +1,7 @@
 #ifndef MATTR_H
 #define MATTR_H
 
+#include <stdlib.h>
 #include <inttypes.h>
 
 #include <map>
