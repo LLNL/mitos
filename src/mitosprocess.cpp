@@ -91,7 +91,7 @@ void dump_samples()
     uint64_t ip;
     int sym_success;
     void *inst_raw;
-    unsigned int addr_width = symtab_code_src->getAddressWidth();
+    unsigned int addr_width = InstructionDecoder::maxInstructionLength;
     Architecture arch = symtab_obj->getArchitecture();
     while(getline(fin,line))
     {
