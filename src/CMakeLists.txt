@@ -29,11 +29,11 @@ target_link_libraries(mitosprocess mitos symtabAPI instructionAPI)
 
 # Install
 install(FILES ${MITOS_HDR_PUBLIC}
-        DESTINATION "include/Mitos")
+        DESTINATION include/Mitos)
 install(TARGETS mitosrun mitosmpirun mitosprocess
-        EXPORT MitosConfig
-        DESTINATION "bin")
+        EXPORT mitos-targets
+        DESTINATION bin)
 install(TARGETS mitos mitosmpihook
-        EXPORT MitosConfig
-        DESTINATION "lib")
+        EXPORT mitos-targets
+        DESTINATION lib/Mitos)
 
