@@ -44,9 +44,9 @@ void Mitos_add_symbol(const char* n, void *a, size_t s, size_t *dims, unsigned i
 void Mitos_resolve_symbol(struct perf_event_sample *s);
 
 // Get friendly sample information
-size_t Mitos_x_index(struct perf_event_sample *s);
-size_t Mitos_y_index(struct perf_event_sample *s);
-size_t Mitos_z_index(struct perf_event_sample *s);
+long Mitos_x_index(struct perf_event_sample *s);
+long Mitos_y_index(struct perf_event_sample *s);
+long Mitos_z_index(struct perf_event_sample *s);
 const char* Mitos_hit_type(struct perf_event_sample *s);
 const char* Mitos_data_source(struct perf_event_sample *s);
 

@@ -1,8 +1,10 @@
 #include <iostream>
 
+#include <omp.h>
+
 void workit()
 {
-    int N = 1024;
+    int N = 4096;
 
     double *a;
     double *b;
@@ -18,6 +20,7 @@ void workit()
         for(j=0; j<N; ++j)
             c[i*N+j] = 0;
 
+#pragma omp parallel for private(i,j,k,N) shared(a,b,c)
     for(i=0; i<N; ++i)
         for(j=0; j<N; ++j)
             for(k=0; k<N; ++k)

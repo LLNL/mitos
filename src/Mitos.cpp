@@ -70,7 +70,7 @@ void Mitos_resolve_symbol(struct perf_event_sample *s)
     }
 }
 
-size_t Mitos_x_index(struct perf_event_sample *s)
+long Mitos_x_index(struct perf_event_sample *s)
 {
     if(s->access_index)
     {
@@ -82,7 +82,7 @@ size_t Mitos_x_index(struct perf_event_sample *s)
     return -1;
 }
 
-size_t Mitos_y_index(struct perf_event_sample *s)
+long Mitos_y_index(struct perf_event_sample *s)
 {
     if(s->access_index)
     {
@@ -94,7 +94,7 @@ size_t Mitos_y_index(struct perf_event_sample *s)
     return -1;
 }
 
-size_t Mitos_z_index(struct perf_event_sample *s)
+long Mitos_z_index(struct perf_event_sample *s)
 {
     if(s->access_index)
     {
