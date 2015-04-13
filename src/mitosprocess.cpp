@@ -20,6 +20,8 @@ using namespace SymtabAPI;
 using namespace ParseAPI;
 using namespace InstructionAPI;
 
+#include "x86_util.h"
+
 char* fout_name;
 char* fin_name;
 char* bin_name;
@@ -69,7 +71,7 @@ int dump_header()
     ssIn.str(linestr);
     boost::split(tokens,linestr,boost::is_any_of(","),boost::token_compress_on);
 
-    fout << "source,line,instruction," << linestr << std::endl;
+    fout << "source,line,instruction,bytes," << linestr << std::endl;
 
     ip_idx = 0;
     for(int i=0; i<tokens.size(); i++)
@@ -91,7 +93,8 @@ void dump_samples()
     uint64_t ip;
     int sym_success;
     void *inst_raw;
-    unsigned int addr_width = InstructionDecoder::maxInstructionLength;
+    unsigned int inst_length = InstructionDecoder::maxInstructionLength;
+    size_t word_size = symtab_code_src->getAddressWidth();
     Architecture arch = symtab_obj->getArchitecture();
     while(getline(fin,line))
     {
@@ -99,13 +102,17 @@ void dump_samples()
 
         for(int i=0; i<=ip_idx; i++)
             getline(ssline,tok,',');
-        
+
         istringstream sstok(tok);
         sstok >> hex >> ip;
 
         std::vector<Statement*> stats;
         sym_success = symtab_obj->getSourceLines(stats,ip);
-        inst_raw = symtab_code_src->getPtrToInstruction(ip);
+        inst_raw = NULL;
+        if(symtab_code_src->isValidAddress(ip))
+        {
+            inst_raw = symtab_code_src->getPtrToInstruction(ip);
+        }
 
         if(is_mpi)
         {
@@ -126,15 +133,25 @@ void dump_samples()
 
         if(inst_raw)
         {
-            InstructionDecoder dec(inst_raw,addr_width,arch);
+            InstructionDecoder dec(inst_raw,inst_length,arch);
             Instruction::Ptr inst = dec.decode();
             Operation op = inst->getOperation();
             entryID eid = op.getID();
             std::string entrystr = NS_x86::entryNames_IAPI[eid];
+
             fout << entrystr << ",";
+
+            if(inst->readsMemory())
+            {
+                size_t bytes = getReadSize(inst);
+                fout << bytes << ",";
+            }
+            else
+                fout << "??,";
         }
         else
         {
+            fout << "??,";
             fout << "??,";
         }
 

@@ -2,7 +2,7 @@
 
 void workit()
 {
-    int N = 512;
+    int N = 1024;
 
     double *a;
     double *b;
@@ -21,7 +21,14 @@ void workit()
     for(i=0; i<N; ++i)
         for(j=0; j<N; ++j)
             for(k=0; k<N; ++k)
-                c[i*N+j] += a[i*N+k] * b[k*N+j];
+            {
+                int cidx = i*N+j;
+                int aidx = i*N+k;
+                int bidx = k*N+j;
+                double av = a[aidx];
+                double bv = a[aidx];
+                c[cidx] += av*bv;
+            }
 
 }
 

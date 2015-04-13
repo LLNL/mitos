@@ -56,12 +56,14 @@ void Mitos_resolve_symbol(struct perf_event_sample *s)
     mem_symbol *m = m_mattr.find_symbol(s->addr);
     if(m)
     {
+        s->data_size = m->get_sz();
         s->num_dims = m->get_num_dims();
         s->access_index = m->get_index(s->addr);
         s->data_symbol = m->get_name();
     }
     else
     {
+        s->data_size = 0;
         s->num_dims = 1;
         s->access_index = NULL;
         s->data_symbol = "??";

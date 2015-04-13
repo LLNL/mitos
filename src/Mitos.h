@@ -87,6 +87,7 @@ struct perf_event_sample
     uint64_t   data_src;            /* if PERF_SAMPLE_DATA_SRC */
     uint64_t   transaction;         /* if PERF_SAMPLE_TRANSACTION */
 
+    size_t data_size;
     size_t num_dims;
     size_t *access_index;
     const char *data_symbol;

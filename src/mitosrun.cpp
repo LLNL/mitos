@@ -24,7 +24,7 @@ std::vector<perf_event_sample> samples;
 
 void dump_header()
 {
-    fout << "variable,ip,time,latency,dataSource,hit,address,cpu" << std::endl;
+    fout << "variable,ip,req_time,ret_time,latency,dataSource,hit,address,cpu" << std::endl;
 }
 
 void dump_samples()
@@ -33,6 +33,7 @@ void dump_samples()
     {
         fout << "??,"; // variable
         fout << std::hex << samples[i].ip << ",";
+        fout << std::hex << samples[i].time-samples[i].weight << ",";
         fout << std::hex << samples[i].time << ",";
         fout << std::dec << samples[i].weight << ",";
         fout << std::hex << Mitos_data_source(&samples[i]) << ",";
