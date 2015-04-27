@@ -104,7 +104,7 @@ void dump_samples()
             getline(ssline,tok,',');
 
         istringstream sstok(tok);
-        sstok >> hex >> ip;
+        sstok >> dec >> ip;
 
         std::vector<Statement*> stats;
         sym_success = symtab_obj->getSourceLines(stats,ip);
