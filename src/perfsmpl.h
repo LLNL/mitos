@@ -11,6 +11,7 @@
 #include <linux/perf_event.h>
 #include <asm/unistd.h>
 #include <pthread.h>
+#include <signal.h>
 
 #include <iostream>
 #include <iomanip>
@@ -18,12 +19,10 @@
 
 #include "Mitos.h"
 
-void* sample_reader_fn(void *args);
-
 class perfsmpl
 {
-    friend void *sample_reader_fn(void *args);
     friend class perf_event_sample;
+    friend void signal_thread_handler(int sig, siginfo_t *info, void *extra);
 
 public:
     perfsmpl();
@@ -46,7 +45,7 @@ public:
 private:
     void init_attr();
     int init_perf();
-    int init_sample_reader();
+    int init_sighandler();
 
     int process_sample_buffer();
     int process_single_sample(struct perf_event_mmap_page *mmap_buf);

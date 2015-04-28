@@ -1,22 +1,23 @@
 #include "perfsmpl.h"
 
 #include <poll.h>
+#include <fcntl.h>
 
-void *sample_reader_fn(void *args)
+perfsmpl *psmpl;
+
+void signal_thread_handler(int sig, siginfo_t *info, void *extra)
 {
-    perfsmpl *pep = (perfsmpl*)args;
+    // Block incoming signals
+    sigset_t blockrtmin;
+    sigemptyset(&blockrtmin);
+    sigaddset(&blockrtmin,SIGRTMIN+1);
+    sigprocmask(SIG_BLOCK,&blockrtmin,NULL);
 
-    struct pollfd pfd;
-    pfd.fd = pep->fd;
-    pfd.events = POLLIN;
+    // Process
+    psmpl->process_sample_buffer();
 
-    while(!pep->stop)
-    {
-        poll(&pfd, 1, 0);
-        pep->process_sample_buffer();
-    }
-
-    return NULL;
+    // Unblock
+    sigprocmask(SIG_UNBLOCK,&blockrtmin,NULL);
 }
 
 perfsmpl::perfsmpl()
@@ -135,6 +136,52 @@ int perfsmpl::init_perf()
     return 0;
 }
 
+int perfsmpl::init_sighandler()
+{
+    psmpl = this;
+
+    // Set up signal handler
+    struct sigaction sact;
+    memset(&sact, 0, sizeof(sact));
+    sact.sa_sigaction = &signal_thread_handler;
+    sact.sa_flags = SA_SIGINFO;
+    sigemptyset(&sact.sa_mask);
+
+    int ret = sigaction(SIGRTMIN+1, &sact, NULL);
+    if(ret)
+    {
+        perror("sigaction");
+        ready=0;
+    }
+
+    // Set perf event fd to signal
+    ret = fcntl(fd, F_SETFL, O_NONBLOCK|O_ASYNC);
+    if(ret)
+    {
+        perror("fcntl");
+        ready=0;
+    }
+    ret = fcntl(fd, F_NOTIFY, DN_MULTISHOT);
+    if(ret)
+    {
+        perror("fcntl");
+        ready=0;
+    }
+    ret = fcntl(fd, F_SETSIG, SIGRTMIN+1);
+    if(ret)
+    {
+        perror("fcntl");
+        ready=0;
+    }
+    ret = fcntl(fd, F_SETOWN, getpid());
+    if(ret)
+    {
+        perror("fcntl");
+        ready=0;
+    } 
+
+}
+
 int perfsmpl::prepare(pid_t p)
 {
     mPID = p;
@@ -142,7 +189,13 @@ int perfsmpl::prepare(pid_t p)
     init_attr();
 
     ret = init_perf();
+    if(ret != 0)
+    {
+        ready = 0;
+        return ret;
+    }
 
+    ret = init_sighandler();
     if(ret != 0)
     {
         ready = 0;
@@ -154,26 +207,12 @@ int perfsmpl::prepare(pid_t p)
     return 0;
 }
 
-int perfsmpl::init_sample_reader()
-{
-    return pthread_create(&sample_reader_thr,NULL,sample_reader_fn,(void*)this);
-}
-
 int perfsmpl::begin_sampler()
 {
     if(!ready)
     {
         std::cerr << "Not ready to begin sampling!" << std::endl;
         return -1;
-    }
-
-    ret = init_sample_reader();
-
-    if(ret)
-    {
-        std::cerr << "Couldn't initialize sample handler thread, aborting!";
-        std::cerr << std::endl;
-        return ret;
     }
 
     ioctl(fd, PERF_EVENT_IOC_RESET, 0);
@@ -185,7 +224,6 @@ int perfsmpl::begin_sampler()
 void perfsmpl::end_sampler()
 {
     stop = 1;
-    pthread_join(sample_reader_thr,NULL);
 
     ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
     read(fd, &counter_value, sizeof(uint64_t));
