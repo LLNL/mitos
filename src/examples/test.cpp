@@ -5,30 +5,32 @@
 
 #include <Mitos.h>
 
+#include <omp.h>
+
 void sample_handler(perf_event_sample *sample, void *args)
 {
     Mitos_resolve_symbol(sample);
 
-    std::cout << sample->data_symbol;
-    std::cout << ",";
-    std::cout << std::dec << Mitos_x_index(sample);
-    std::cout << ",";
-    std::cout << std::dec << Mitos_y_index(sample);
-    std::cout << ",";
-    std::cout << std::hex << sample->ip ;
-    std::cout << ",";
-    std::cout << std::hex << sample->time ;
-    std::cout << ",";
-    std::cout << std::dec << sample->weight ;
-    std::cout << ",";
-    std::cout << std::hex << Mitos_data_source(sample);
-    std::cout << ",";
-    std::cout << std::hex << Mitos_hit_type(sample);
-    std::cout << ",";
-    std::cout << std::hex << sample->addr ;
-    std::cout << ",";
-    std::cout << std::dec << sample->cpu << std::endl;
-    std::cout << std::endl;
+    std::cerr << sample->data_symbol;
+    std::cerr << ",";
+    std::cerr << std::dec << Mitos_x_index(sample);
+    std::cerr << ",";
+    std::cerr << std::dec << Mitos_y_index(sample);
+    std::cerr << ",";
+    std::cerr << std::hex << sample->ip ;
+    std::cerr << ",";
+    std::cerr << std::hex << sample->time ;
+    std::cerr << ",";
+    std::cerr << std::dec << sample->weight ;
+    std::cerr << ",";
+    std::cerr << std::hex << Mitos_data_source(sample);
+    std::cerr << ",";
+    std::cerr << std::hex << Mitos_hit_type(sample);
+    std::cerr << ",";
+    std::cerr << std::hex << sample->addr ;
+    std::cerr << ",";
+    std::cerr << std::dec << sample->cpu << std::endl;
+    std::cerr << std::endl;
 }
 
 #define ROW_MAJOR(x,y,width) y*width+x
@@ -87,6 +89,8 @@ int main(int argc, char **argv)
     init_matrices(N,&a,&b,&c);
 
     Mitos_set_sample_mode(SMPL_MEMORY);
+    Mitos_set_sample_period(10000);
+    Mitos_set_sample_threshold(30);
     Mitos_set_handler_fn(&sample_handler,NULL);
 
     Mitos_prepare(0);

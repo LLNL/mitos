@@ -22,7 +22,7 @@ void *sample_reader_fn(void *args)
 perfsmpl::perfsmpl()
 {
     // Defaults
-    mmap_pages = 32;
+    mmap_pages = 1;
     sample_period = 4000;
     sample_threshold = 7;
     pgsz = sysconf(_SC_PAGESIZE);
