@@ -7,26 +7,26 @@
 
 void sample_handler(perf_event_sample *sample, void *args)
 {
-    Mitos_resolve_symbol(sample);
+    //Mitos_resolve_symbol(sample);
 
-    std::cout << sample->data_symbol;
-    std::cout << ",";
-    std::cout << std::dec << Mitos_x_index(sample);
-    std::cout << ",";
-    std::cout << std::dec << Mitos_y_index(sample);
-    std::cout << ",";
-    std::cout << std::hex << sample->ip ;
-    std::cout << ",";
-    std::cout << std::hex << sample->time ;
-    std::cout << ",";
-    std::cout << std::dec << sample->weight ;
-    std::cout << ",";
-    std::cout << std::hex << Mitos_data_source(sample);
-    std::cout << ",";
-    std::cout << std::hex << Mitos_hit_type(sample);
-    std::cout << ",";
-    std::cout << std::hex << sample->addr ;
-    std::cout << ",";
+    //std::cout << sample->data_symbol;
+    //std::cout << ",";
+    //std::cout << std::dec << Mitos_x_index(sample);
+    //std::cout << ",";
+    //std::cout << std::dec << Mitos_y_index(sample);
+    //std::cout << ",";
+    //std::cout << std::hex << sample->ip ;
+    //std::cout << ",";
+    //std::cout << std::hex << sample->time ;
+    //std::cout << ",";
+    //std::cout << std::dec << sample->weight ;
+    //std::cout << ",";
+    //std::cout << std::hex << Mitos_data_source(sample);
+    //std::cout << ",";
+    //std::cout << std::hex << Mitos_hit_type(sample);
+    //std::cout << ",";
+    //std::cout << std::hex << sample->addr ;
+    //std::cout << ",";
     std::cout << std::dec << sample->cpu << std::endl;
     std::cout << std::endl;
 }
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
     Mitos_set_sample_mode(SMPL_MEMORY);
     Mitos_set_handler_fn(&sample_handler,NULL);
     Mitos_set_sample_threshold(10);
-    Mitos_set_sample_period(10000);
+    Mitos_set_sample_period(40000);
 
     Mitos_prepare(0);
 

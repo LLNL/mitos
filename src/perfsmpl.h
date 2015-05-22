@@ -69,6 +69,7 @@ private:
     int fd;
     pid_t mPID;
     struct perf_event_mmap_page *mmap_buf;
+    perf_event_sample pes;
     uint64_t counter_value;
 
     // event_attr variables
