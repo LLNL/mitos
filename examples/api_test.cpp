@@ -3,32 +3,13 @@
 #include <vector>
 #include <cstdlib>
 
-#include <Mitos.h>
+#include "../src/Mitos.h"
+
+mitos_output mout;
 
 void sample_handler(perf_event_sample *sample, void *args)
 {
-    //Mitos_resolve_symbol(sample);
-
-    //std::cout << sample->data_symbol;
-    //std::cout << ",";
-    //std::cout << std::dec << Mitos_x_index(sample);
-    //std::cout << ",";
-    //std::cout << std::dec << Mitos_y_index(sample);
-    //std::cout << ",";
-    //std::cout << std::hex << sample->ip ;
-    //std::cout << ",";
-    //std::cout << std::hex << sample->time ;
-    //std::cout << ",";
-    //std::cout << std::dec << sample->weight ;
-    //std::cout << ",";
-    //std::cout << std::hex << Mitos_data_source(sample);
-    //std::cout << ",";
-    //std::cout << std::hex << Mitos_hit_type(sample);
-    //std::cout << ",";
-    //std::cout << std::hex << sample->addr ;
-    //std::cout << ",";
-    std::cout << std::dec << sample->cpu << std::endl;
-    std::cout << std::endl;
+    Mitos_write_sample(sample, &mout);
 }
 
 #define ROW_MAJOR(x,y,width) y*width+x
@@ -78,22 +59,24 @@ void matmul(int N, double *a, double *b, double *c)
 
 int main(int argc, char **argv)
 {
-    // Print header
-    std::cout << "variable,xidx,yidx,ip,time,latency,dataSource,hit,address,cpu" << std::endl;
-
-    // Initialize memory
     int N = (argc == 2) ? atoi(argv[1]) : 1024;
+
     double *a,*b,*c;
     init_matrices(N,&a,&b,&c);
+
+    Mitos_create_output(&mout);
+    Mitos_pre_process(&mout);
 
     Mitos_set_sample_mode(SMPL_MEMORY);
     Mitos_set_handler_fn(&sample_handler,NULL);
     Mitos_set_sample_threshold(10);
-    Mitos_set_sample_period(40000);
+    Mitos_set_sample_period(4000);
 
     Mitos_prepare(0);
 
     Mitos_begin_sampler();
     matmul(N,a,b,c);
     Mitos_end_sampler();
+
+    Mitos_post_process(argv[0],&mout);
 }
