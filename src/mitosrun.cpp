@@ -12,35 +12,19 @@
 size_t bufsz;
 uint64_t period;
 uint64_t thresh;
-char* fout_name;
 
 #define DEFAULT_BUFSZ       4096
 #define DEFAULT_THRESH      10
 #define DEFAULT_PERIOD      4000
-#define DEFAULT_FOUT_NAME   "samples.out"
 
-std::ofstream fout;
+mitos_output mout;
 std::vector<perf_event_sample> samples;
-
-void dump_header()
-{
-    fout << "variable,ip,req_time,ret_time,latency,dataSource,hit,address,cpu" << std::endl;
-}
 
 void dump_samples()
 {
     for(size_t i=0; i<samples.size(); i++)
-    {
-        fout << "??,"; // variable
-        fout << std::hex << samples[i].ip << ",";
-        fout << std::hex << samples[i].time-samples[i].weight << ",";
-        fout << std::hex << samples[i].time << ",";
-        fout << std::dec << samples[i].weight << ",";
-        fout << std::hex << Mitos_data_source(&samples[i]) << ",";
-        fout << std::hex << Mitos_hit_type(&samples[i]) << ",";
-        fout << std::hex << samples[i].addr << ",";
-        fout << std::dec << samples[i].cpu << std::endl;
-    }
+        Mitos_write_sample(&samples.at(i), &mout);
+    samples.clear();
 }
 
 void sample_handler(perf_event_sample *sample, void *args)
@@ -48,10 +32,7 @@ void sample_handler(perf_event_sample *sample, void *args)
     samples.push_back(*sample);
 
     if(samples.size() >= bufsz)
-    {
         dump_samples();
-        samples.clear();
-    }
 }
 
 void usage(char **argv)
@@ -59,7 +40,6 @@ void usage(char **argv)
     std::cerr << "Usage:" << std::endl;
     std::cerr << argv[0] << " [options] <cmd> [args]" << std::endl;
     std::cerr << "    [options]:" << std::endl;
-    std::cerr << "        -o filename (default samples.out)" << std::endl;
     std::cerr << "        -b sample buffer size (default 4096)" << std::endl;
     std::cerr << "        -p sample period (default 4000)" << std::endl;
     std::cerr << "        -t sample latency threshold (default 10)" << std::endl;
@@ -72,7 +52,6 @@ void set_defaults()
     bufsz = DEFAULT_BUFSZ;
     period = DEFAULT_PERIOD;
     thresh = DEFAULT_THRESH;
-    fout_name = strdup(DEFAULT_FOUT_NAME);
 }
 
 int parse_args(int argc, char **argv)
@@ -80,13 +59,10 @@ int parse_args(int argc, char **argv)
     set_defaults();
 
     int c;
-    while((c=getopt(argc, argv, "o:b:p:t:")) != -1)
+    while((c=getopt(argc, argv, "b:p:t:")) != -1)
     {
         switch(c)
         {
-            case 'o':
-                fout_name = optarg;
-                break;
             case 'b':
                 bufsz = atoi(optarg);
                 break;
@@ -166,16 +142,19 @@ int main(int argc, char **argv)
         int status;
         wait(&status);
 
-        fout.open(fout_name, std::ofstream::out | std::ofstream::trunc);
-        if(!fout.is_open())
+        int err = Mitos_create_output(&mout);
+        if(err)
         {
-            std::cerr << "Cannot open output file " << fout_name << std::endl;
-            std::cerr << "Aborting..." << std::endl;
             kill(child, SIGKILL);
             return 1;
         }
 
-        dump_header();
+        err = Mitos_pre_process(&mout);
+        if(err)
+        {
+            kill(child, SIGKILL);
+            return 1;
+        }
 
         Mitos_set_sample_mode(SMPL_MEMORY);
 
@@ -189,10 +168,23 @@ int main(int argc, char **argv)
         Mitos_begin_sampler();
         {
             ptrace(PTRACE_CONT,child,0,0);
-            wait(&status);
+
+            // Wait until process exits
+            do { wait(&status); } 
+            while(!WIFEXITED(status));
         }
         Mitos_end_sampler();
 
         dump_samples(); // anything left over
+
+        std::cout << "Command completed! Processing samples...\n" << std::endl;
+
+        err = Mitos_post_process(argv[cmdarg],&mout);
+        if(err)
+            return 1;
+
+        std::cout << "Done!\n" << std::endl;
     }
+
+    return 0;
 }

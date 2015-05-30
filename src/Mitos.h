@@ -3,11 +3,12 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <inttypes.h>
 
 struct mem_symbol;
 struct perf_event_sample;
-struct sample_buffer;
+struct mitos_output;
 
 typedef void (*sample_handler_fn_t)(struct perf_event_sample *sample, void *args);
 typedef void (*end_fn_t)(void *args);
@@ -50,6 +51,12 @@ long Mitos_z_index(struct perf_event_sample *s);
 const char* Mitos_hit_type(struct perf_event_sample *s);
 const char* Mitos_data_source(struct perf_event_sample *s);
 
+// Output
+int Mitos_create_output(mitos_output *mout);
+int Mitos_pre_process(mitos_output *mout);
+int Mitos_write_sample(perf_event_sample *s, mitos_output *mout);
+int Mitos_post_process(char *bin_name, mitos_output *mout);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
@@ -91,6 +98,24 @@ struct perf_event_sample
     size_t num_dims;
     size_t *access_index;
     const char *data_symbol;
+};
+
+struct mitos_output
+{
+    mitos_output()
+      { memset(this,0,sizeof(this)); ok=false; }
+
+    bool ok;
+
+    char *dname_topdir;
+    char *dname_datadir;
+    char *dname_srcdir;
+
+    char *fname_raw;
+    char *fname_processed;
+
+    FILE *fout_raw;
+    FILE *fout_processed;
 };
 
 #endif
