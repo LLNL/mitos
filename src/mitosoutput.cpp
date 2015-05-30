@@ -193,6 +193,16 @@ int Mitos_post_process(char *bin_name, mitos_output *mout)
               << line << std::endl;
     }
 
+    fproc.close();
+    fraw.close();
+
+    int err = remove(mout->fname_raw);
+    if(err)
+    {
+        std::cerr << "Mitos: Failed to delete raw sample file!\n";
+        return 1;
+    }
+
     return 0;
 }
 
