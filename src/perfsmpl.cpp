@@ -1,22 +1,30 @@
 #include "perfsmpl.h"
 
 #include <poll.h>
+#include <fcntl.h>
 
-void *sample_reader_fn(void *args)
+perfsmpl *psmpl;
+
+void signal_thread_handler(int sig, siginfo_t *info, void *extra)
 {
-    perfsmpl *pep = (perfsmpl*)args;
+    // Stop sampling
+    ioctl(psmpl->fd, PERF_EVENT_IOC_DISABLE, 0);
 
-    struct pollfd pfd;
-    pfd.fd = pep->fd;
-    pfd.events = POLLIN;
+    // Block incoming signals
+    sigset_t blockrtmin;
+    sigemptyset(&blockrtmin);
+    sigaddset(&blockrtmin,SIGIO);
+    sigprocmask(SIG_BLOCK,&blockrtmin,NULL);
 
-    while(!pep->stop)
-    {
-        poll(&pfd, 1, 0);
-        pep->process_sample_buffer();
-    }
 
-    return NULL;
+    // Process
+    psmpl->process_sample_buffer();
+
+    // Unblock
+    sigprocmask(SIG_UNBLOCK,&blockrtmin,NULL);
+
+    // Restart sampling
+    ioctl(psmpl->fd, PERF_EVENT_IOC_ENABLE, 0);
 }
 
 perfsmpl::perfsmpl()
@@ -78,7 +86,7 @@ void perfsmpl::init_attr()
         pe.config1 = sample_threshold; // ldlat
         pe.sample_type =
             PERF_SAMPLE_IP |
-            PERF_SAMPLE_CALLCHAIN |
+            //PERF_SAMPLE_CALLCHAIN |
             PERF_SAMPLE_ID |
             PERF_SAMPLE_STREAM_ID |
             PERF_SAMPLE_TIME |
@@ -97,7 +105,7 @@ void perfsmpl::init_attr()
         pe.config = PERF_COUNT_SW_DUMMY;
         pe.sample_type =
             PERF_SAMPLE_IP |
-            PERF_SAMPLE_CALLCHAIN |
+            //PERF_SAMPLE_CALLCHAIN |
             PERF_SAMPLE_ID |
             PERF_SAMPLE_STREAM_ID |
             PERF_SAMPLE_TIME |
@@ -114,9 +122,8 @@ int perfsmpl::init_perf()
 
     if(fd == -1)
     {
-       perror("perf_event_open");
-       ready=0;
-       return -1;
+        perror("perf_event_open");
+        return 1;
     }
 
     // Create mmap buffer for samples
@@ -125,14 +132,72 @@ int perfsmpl::init_perf()
 
     if(mmap_buf == MAP_FAILED)
     {
-       std::cerr << "Error mmap-ing buffer " << std::endl;
-       ready = 0;
-       return -1;
+        perror("mmap");
+        return 1;
     }
 
-    ready = 1;
-
     return 0;
+}
+
+int perfsmpl::init_sighandler()
+{
+    psmpl = this;
+
+    // Set up signal handler
+    struct sigaction sact;
+    memset(&sact, 0, sizeof(sact));
+    sact.sa_sigaction = &signal_thread_handler;
+    sact.sa_flags = SA_SIGINFO;
+
+    int ret = sigaction(SIGIO, &sact, NULL);
+    if(ret)
+    {
+        perror("sigaction");
+        return 1;
+    }
+
+    sigset_t sold, snew;
+    sigemptyset(&sold);
+    sigemptyset(&snew);
+    sigaddset(&snew, SIGIO);
+
+    ret = sigprocmask(SIG_SETMASK, NULL, &sold);
+    if(ret)
+    {
+        perror("sigaction");
+        return 1;
+    }
+
+	if(sigismember(&sold, SIGIO))
+    {
+		ret = sigprocmask(SIG_UNBLOCK, &snew, NULL);
+        if(ret)
+        {
+            perror("sigaction");
+            return 1;
+        }
+    }
+
+    // Set perf event fd to signal
+    ret = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0)|O_ASYNC);
+    if(ret)
+    {
+        perror("fcntl");
+        return 1;
+    }
+    ret = fcntl(fd, F_SETSIG, SIGIO);
+    if(ret)
+    {
+        perror("fcntl");
+        return 1;
+    }
+    ret = fcntl(fd, F_SETOWN, getpid());
+    if(ret)
+    {
+        perror("fcntl");
+        return 1;
+    } 
+
 }
 
 int perfsmpl::prepare(pid_t p)
@@ -142,7 +207,13 @@ int perfsmpl::prepare(pid_t p)
     init_attr();
 
     ret = init_perf();
+    if(ret != 0)
+    {
+        ready = 0;
+        return ret;
+    }
 
+    ret = init_sighandler();
     if(ret != 0)
     {
         ready = 0;
@@ -154,26 +225,12 @@ int perfsmpl::prepare(pid_t p)
     return 0;
 }
 
-int perfsmpl::init_sample_reader()
-{
-    return pthread_create(&sample_reader_thr,NULL,sample_reader_fn,(void*)this);
-}
-
 int perfsmpl::begin_sampler()
 {
     if(!ready)
     {
         std::cerr << "Not ready to begin sampling!" << std::endl;
         return -1;
-    }
-
-    ret = init_sample_reader();
-
-    if(ret)
-    {
-        std::cerr << "Couldn't initialize sample handler thread, aborting!";
-        std::cerr << std::endl;
-        return ret;
     }
 
     ioctl(fd, PERF_EVENT_IOC_RESET, 0);
@@ -185,7 +242,6 @@ int perfsmpl::begin_sampler()
 void perfsmpl::end_sampler()
 {
     stop = 1;
-    pthread_join(sample_reader_thr,NULL);
 
     ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
     read(fd, &counter_value, sizeof(uint64_t));
@@ -209,72 +265,73 @@ int perfsmpl::process_single_sample(struct perf_event_mmap_page *mmap_buf)
 
     collected_samples++;
 
-    // Create and fill up a new sample
-    perf_event_sample *sample = new perf_event_sample();
-    //sample->parent = this;
-
+    // Fill up our sample
+    memset(&pes,0,sizeof(pes));
+    
     if(has_attribute(PERF_SAMPLE_IP))
     {
-        read_mmap_buffer(mmap_buf,(char*)&sample->ip,sizeof(uint64_t));
+        read_mmap_buffer(mmap_buf,(char*)&pes.ip,sizeof(uint64_t));
     }
 
     if(has_attribute(PERF_SAMPLE_TID))
     {
-        read_mmap_buffer(mmap_buf,(char*)&sample->pid,sizeof(uint32_t));
-        read_mmap_buffer(mmap_buf,(char*)&sample->tid,sizeof(uint32_t));
+        read_mmap_buffer(mmap_buf,(char*)&pes.pid,sizeof(uint32_t));
+        read_mmap_buffer(mmap_buf,(char*)&pes.tid,sizeof(uint32_t));
     }
 
     if(has_attribute(PERF_SAMPLE_TIME))
     {
-        read_mmap_buffer(mmap_buf,(char*)&sample->time,sizeof(uint64_t));
+        read_mmap_buffer(mmap_buf,(char*)&pes.time,sizeof(uint64_t));
     }
 
     if(has_attribute(PERF_SAMPLE_ADDR))
     {
-        read_mmap_buffer(mmap_buf,(char*)&sample->addr,sizeof(uint64_t));
+        read_mmap_buffer(mmap_buf,(char*)&pes.addr,sizeof(uint64_t));
     }
 
     if(has_attribute(PERF_SAMPLE_ID))
     {
-        read_mmap_buffer(mmap_buf,(char*)&sample->id,sizeof(uint64_t));
+        read_mmap_buffer(mmap_buf,(char*)&pes.id,sizeof(uint64_t));
     }
 
     if(has_attribute(PERF_SAMPLE_STREAM_ID))
     {
-        read_mmap_buffer(mmap_buf,(char*)&sample->stream_id,sizeof(uint64_t));
+        read_mmap_buffer(mmap_buf,(char*)&pes.stream_id,sizeof(uint64_t));
     }
 
     if(has_attribute(PERF_SAMPLE_CPU))
     {
-        read_mmap_buffer(mmap_buf,(char*)&sample->cpu,sizeof(uint32_t));
-        read_mmap_buffer(mmap_buf,(char*)&sample->res,sizeof(uint32_t));
+        read_mmap_buffer(mmap_buf,(char*)&pes.cpu,sizeof(uint32_t));
+        read_mmap_buffer(mmap_buf,(char*)&pes.res,sizeof(uint32_t));
     }
 
     if(has_attribute(PERF_SAMPLE_PERIOD))
     {
-        read_mmap_buffer(mmap_buf,(char*)&sample->period,sizeof(uint64_t));
+        read_mmap_buffer(mmap_buf,(char*)&pes.period,sizeof(uint64_t));
     }
 
+    /*
     if(has_attribute(PERF_SAMPLE_CALLCHAIN))
     {
-        read_mmap_buffer(mmap_buf,(char*)&sample->nr,sizeof(uint64_t));
-        sample->ips = (uint64_t*)malloc(sample->nr*sizeof(uint64_t));
-        read_mmap_buffer(mmap_buf,(char*)sample->ips,sample->nr*sizeof(uint64_t));
+        read_mmap_buffer(mmap_buf,(char*)&pes.nr,sizeof(uint64_t));
+        pes.ips = (uint64_t*)malloc(pes.nr*sizeof(uint64_t));
+        read_mmap_buffer(mmap_buf,(char*)pes.ips,pes.nr*sizeof(uint64_t));
     }
+    */
 
     if(has_attribute(PERF_SAMPLE_WEIGHT))
     {
-        read_mmap_buffer(mmap_buf,(char*)&sample->weight,sizeof(uint64_t));
+        read_mmap_buffer(mmap_buf,(char*)&pes.weight,sizeof(uint64_t));
     }
 
     if(has_attribute(PERF_SAMPLE_DATA_SRC))
     {
-        read_mmap_buffer(mmap_buf,(char*)&sample->data_src,sizeof(uint64_t));
+        read_mmap_buffer(mmap_buf,(char*)&pes.data_src,sizeof(uint64_t));
     }
 
     if(handler_fn_defined)
     {
-        handler_fn(sample,handler_fn_args);
+        handler_fn(&pes,handler_fn_args);
     }
 
     return ret;

@@ -49,4 +49,5 @@ int main(int argc, char **argv)
     double *a,*b,*c;
     init_matrices(N,&a,&b,&c);
     matmul(N,a,b,c);
+    return 0;
 }
