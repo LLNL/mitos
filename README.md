@@ -18,6 +18,8 @@ Mitos requires:
 
 * [Dyninst](http://www.dyninst.org) version 8.2 or higher.
 
+* [hwloc](http://www.open-mpi.org/projects/hwloc/) 
+
 ## Building
 
 1. Make sure that Dyninst is installed and its location is added to the
@@ -33,46 +35,42 @@ Mitos requires:
 
 ## Running
 
-1. Find the `mitosrun` and `mitosmpirun` commands in the `bin` directory in the install
+1. Find the `mitosrun` command in the `bin` directory in the install
    directory.
 
-2. Run any non-MPI binary with `mitosrun` like this to generate a `.csv` file
-   full of memory samples.  For example:
+2. Run any binary with `mitosrun` like this to generate a folder of
+   mitos output data. For example:
 
    ```
    mitosrun ./examples/matmul
    ```
 
-   The above command will run the ls command and will output a
-   `samples.out` file containing memory samples.
-
-   For MPI binaries, use `mitosmpirun` e.g.:
+   The above command will run the matmul example and create a folder
+   called mitos_###, where ### is the number of seconds since the
+   epoch. The folder will contain:
 
    ```
-   srun -N2 ./mitosrun examples/mpi_matmul
+   mitos_###/
+      data/
+         samples.csv
+      src/
+         <empty>
+      hardware.xml
    ```
 
-   Both `mitosrun` and `mitosmpirun` can also be fine-tuned with the following parameters:
+   Where `samples.csv` contains a comma-separated list of memory
+   samples, hardware.xml describes the hardware topology (using hwloc)
+   and src is an empty directory where you can put the program source
+   files for use in MemAxes.
+
+   `mitosrun` can also be fine-tuned with the following parameters:
 
    ```
    [options]:
-       -o filename (default samples.out or MPI host name)
        -b sample buffer size (default 4096)
        -p sample period (default 4000)
        -t sample latency threshold (default 10)
    ```
-
-3. Run `mitosprocess` on the memory samples file, supplying a binary 
-   with debug information (compiled with -g) to generate a new output
-   file with source and line information. For example:
-
-   ```
-   mitosprocess samples.out ./matmul
-   ```
-
-   The above command will produce a new file, `processed_samples.out`, 
-   which contains the same samples plus source files and line numbers
-   associated with each sample.
 
 # Authors
 
