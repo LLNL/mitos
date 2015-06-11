@@ -198,6 +198,7 @@ int perfsmpl::init_sighandler()
         return 1;
     } 
 
+    return 0;
 }
 
 int perfsmpl::prepare(pid_t p)
