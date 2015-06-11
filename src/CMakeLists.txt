@@ -18,11 +18,11 @@ target_link_libraries(mitosrun mitos)
 
 # Install
 install(FILES ${MITOS_HDR_PUBLIC}
-        DESTINATION include/Mitos)
+        DESTINATION include)
 install(TARGETS mitosrun 
         EXPORT mitos-targets
         DESTINATION bin)
 install(TARGETS mitos 
         EXPORT mitos-targets
-        DESTINATION lib/Mitos)
+        DESTINATION lib)
 
