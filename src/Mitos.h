@@ -96,7 +96,7 @@ struct perf_event_sample
 
     size_t data_size;
     size_t num_dims;
-    size_t *access_index;
+    size_t access_index[3];
     const char *data_symbol;
 };
 

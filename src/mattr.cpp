@@ -35,21 +35,15 @@ bool mem_symbol::contains(uint64_t addr)
     return this->addr <= addr &&  addr < this->addr+sz*len;
 }
 
-#include <iostream>
-#define DBGVAR(x) std::cerr << #x << " : " << x << std::endl;
-
-size_t* mem_symbol::get_index(uint64_t a) 
+void mem_symbol::get_index(uint64_t a, size_t *d) 
 {
     unsigned int idx = (a-addr)/sz;
 
-    size_t *d = (size_t*)malloc(sizeof(size_t)*num_dims);
     for(int i=0; i<num_dims; i++)
     {
         d[i] = idx % dims[i];
         idx = idx / dims[i];
     }
-
-    return d;
 }
 
 mem_symbol_splay_tree::mem_symbol_splay_tree()

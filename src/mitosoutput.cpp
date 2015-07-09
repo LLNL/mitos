@@ -98,15 +98,24 @@ int Mitos_write_sample(perf_event_sample *sample, mitos_output *mout)
     if(!mout->ok)
         return 1;
 
-    fprintf(mout->fout_raw,"%llu,",sample->ip);
-    fprintf(mout->fout_raw,"%llu,",sample->pid);
-    fprintf(mout->fout_raw,"%llu,",sample->tid);
-    fprintf(mout->fout_raw,"%llu,",sample->time);
-    fprintf(mout->fout_raw,"%llu,",sample->addr);
-    fprintf(mout->fout_raw,"%llu,",sample->cpu);
-    fprintf(mout->fout_raw,"%llu,",sample->weight);
-    fprintf(mout->fout_raw,"%llu",sample->data_src);
-    fprintf(mout->fout_raw,"\n");
+    Mitos_resolve_symbol(sample);
+
+    fprintf(mout->fout_raw,
+            "%llu,%s,%llu,%llu,%llu,%llu,%llu,%u,%u,%llu,%llu,%u,%llu,%llu\n",
+            sample->ip,
+            sample->data_symbol,
+            sample->data_size,
+            sample->num_dims,
+            sample->access_index[0],
+            sample->access_index[1],
+            sample->access_index[2],
+            sample->pid,
+            sample->tid,
+            sample->time,
+            sample->addr,
+            sample->cpu,
+            sample->weight,
+            sample->data_src);
     
     return 0;
 }
@@ -135,7 +144,7 @@ int Mitos_post_process(char *bin_name, mitos_output *mout)
     std::ofstream fproc(mout->fname_processed);
 
     // Write header for processed samples
-    fproc << "source,line,instruction,bytes,ip,pid,tid,time,addr,cpu,latency,data_src\n";
+    fproc << "source,line,instruction,bytes,ip,variable,buffer_size,dims,xidx,yidx,zidx,pid,tid,time,addr,cpu,latency,data_src\n";
 
     // Read raw samples one by one and get attribute from ip
     uint64_t ip;

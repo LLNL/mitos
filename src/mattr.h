@@ -29,7 +29,7 @@ class mem_symbol
         size_t get_len() {return len;}
         unsigned int get_num_dims() {return num_dims;}
 
-        size_t* get_index(uint64_t a);
+        void get_index(uint64_t a, size_t *d);
 
     private:
         char* name;

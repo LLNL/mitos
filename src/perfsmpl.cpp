@@ -2,29 +2,26 @@
 
 #include <poll.h>
 #include <fcntl.h>
+#include <pthread.h>
 
 perfsmpl *psmpl;
+pthread_mutex_t sample_mutex;
 
 void signal_thread_handler(int sig, siginfo_t *info, void *extra)
 {
-    // Stop sampling
-    ioctl(psmpl->fd, PERF_EVENT_IOC_DISABLE, 0);
-
     // Block incoming signals
-    sigset_t blockrtmin;
-    sigemptyset(&blockrtmin);
-    sigaddset(&blockrtmin,SIGIO);
-    sigprocmask(SIG_BLOCK,&blockrtmin,NULL);
-
+    sigset_t blocksig;
+    sigemptyset(&blocksig);
+    sigaddset(&blocksig,SIGIO);
+    sigprocmask(SIG_BLOCK,&blocksig,NULL);
 
     // Process
+    pthread_mutex_lock(&sample_mutex);
     psmpl->process_sample_buffer();
+    pthread_mutex_unlock(&sample_mutex);
 
     // Unblock
-    sigprocmask(SIG_UNBLOCK,&blockrtmin,NULL);
-
-    // Restart sampling
-    ioctl(psmpl->fd, PERF_EVENT_IOC_ENABLE, 0);
+    sigprocmask(SIG_UNBLOCK,&blocksig,NULL);
 }
 
 perfsmpl::perfsmpl()
@@ -142,6 +139,7 @@ int perfsmpl::init_perf()
 int perfsmpl::init_sighandler()
 {
     psmpl = this;
+    pthread_mutex_init(&sample_mutex, NULL);
 
     // Set up signal handler
     struct sigaction sact;
@@ -257,13 +255,6 @@ void perfsmpl::end_sampler()
 
 int perfsmpl::process_single_sample(struct perf_event_mmap_page *mmap_buf)
 {
-    // Read a sample from the mmap buf
-    if(ret)
-    {
-        std::cerr << "Can't read mmap buffer!\n" << std::endl;
-        return -1;
-    }
-
     collected_samples++;
 
     // Fill up our sample
@@ -343,12 +334,15 @@ int perfsmpl::process_sample_buffer()
     struct perf_event_header ehdr;
     int ret;
 
-    for(;;) {
+
+    for(;;) 
+    {
         ret = read_mmap_buffer(mmap_buf,(char*)&ehdr,sizeof(ehdr));
         if(ret)
             return 0; // no more samples
 
-        switch(ehdr.type) {
+        switch(ehdr.type) 
+        {
             case PERF_RECORD_SAMPLE:
                 process_single_sample(mmap_buf);
                 break;
@@ -370,6 +364,7 @@ int perfsmpl::process_sample_buffer()
                 skip_mmap_buffer(mmap_buf,sizeof(ehdr));
         }
     }
+
 }
 
 int perfsmpl::read_mmap_buffer(struct perf_event_mmap_page *mmap_buf, char *out, size_t sz)
