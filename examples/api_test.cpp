@@ -69,7 +69,6 @@ int main(int argc, char **argv)
     Mitos_create_output(&mout);
     Mitos_pre_process(&mout);
 
-    Mitos_set_sample_mode(SMPL_MEMORY);
     Mitos_set_handler_fn(&sample_handler,NULL);
     Mitos_set_sample_threshold(10);
     Mitos_set_sample_period(4000);

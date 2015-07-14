@@ -13,12 +13,6 @@ struct mitos_output;
 typedef void (*sample_handler_fn_t)(struct perf_event_sample *sample, void *args);
 typedef void (*end_fn_t)(void *args);
 
-enum sample_mode
-{
-    SMPL_MEMORY,
-    SMPL_INSTRUCTIONS
-};
-
 /*
  * Mitos: 
  * All programs must invoke from these functions.
@@ -29,11 +23,9 @@ extern "C" {
 #endif
 
 // Sampler configuration
-void Mitos_set_sample_mode(enum sample_mode m);
 void Mitos_set_sample_period(uint64_t p);
 void Mitos_set_sample_threshold(uint64_t t);
 void Mitos_set_handler_fn(sample_handler_fn_t h, void *args);
-void Mitos_set_end_fn(end_fn_t h, void *args);
 
 // Sampler invocation
 void Mitos_prepare(pid_t pid);
@@ -103,7 +95,7 @@ struct perf_event_sample
 struct mitos_output
 {
     mitos_output()
-      { memset(this,0,sizeof(this)); ok=false; }
+      { memset(this,0,sizeof(struct mitos_output)); ok=false; }
 
     bool ok;
 

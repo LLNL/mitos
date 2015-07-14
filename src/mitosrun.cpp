@@ -156,8 +156,6 @@ int main(int argc, char **argv)
             return 1;
         }
 
-        Mitos_set_sample_mode(SMPL_MEMORY);
-
         Mitos_set_sample_period(period);
         Mitos_set_sample_threshold(thresh);
 
