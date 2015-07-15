@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <inttypes.h>
 
+#include <bits/pthreadtypes.h>
+
 struct mem_symbol;
 struct perf_event_sample;
 struct mitos_output;

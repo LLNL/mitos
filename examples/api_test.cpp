@@ -11,6 +11,7 @@ mitos_output mout;
 
 void sample_handler(perf_event_sample *sample, void *args)
 {
+    fprintf(stderr, "SAMP: cpu=%d, tid=%d\n", sample->cpu, sample->tid);
     Mitos_write_sample(sample, &mout);
 }
 
@@ -70,14 +71,21 @@ int main(int argc, char **argv)
     Mitos_pre_process(&mout);
 
     Mitos_set_handler_fn(&sample_handler,NULL);
-    Mitos_set_sample_threshold(10);
+    Mitos_set_sample_threshold(3);
     Mitos_set_sample_period(4000);
 
     Mitos_prepare(0);
 
-    Mitos_begin_sampler();
-    matmul(N,a,b,c);
-    Mitos_end_sampler();
+#pragma omp parallel
+    {
+        Mitos_begin_sampler();
+    }
 
+    matmul(N,a,b,c);
+
+#pragma omp parallel
+    {
+        Mitos_end_sampler();
+    }
     Mitos_post_process(argv[0],&mout);
 }

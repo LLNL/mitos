@@ -33,7 +33,7 @@ public:
     procsmpl();
     ~procsmpl();
 
-    int prepare(pid_t PID);
+    void prepare(pid_t PID);
 
     int begin_sampling();
     void end_sampling();
@@ -52,7 +52,6 @@ public:
 private:
     // set up perf_event_attr
     void init_attr();
-    int init_proc_sighandler();
 
 private:
     // perf event configuration
@@ -71,9 +70,6 @@ private:
     // user-defined handler
     sample_handler_fn_t handler_fn;
     void *handler_fn_args;
-
-    // per-thread sampler instances
-    std::vector<threadsmpl> thread_samplers;
 };
 
 // Thread-local Sampler

@@ -3,10 +3,8 @@
 
 #include <poll.h>
 #include <fcntl.h>
-#include <pthread.h>
 
-//__thread threadsmpl tsmp;
-threadsmpl *tsmp;
+static __thread threadsmpl tsmp;
 
 pid_t gettid(void)
 {
@@ -24,19 +22,12 @@ void thread_sighandler(int sig, siginfo_t *info, void *extra)
 {
     int fd = info->si_fd;
 
-    fprintf(stderr, "SAMP!\n");
-
-    process_sample_buffer(&tsmp->pes,
-                          tsmp->proc_parent->attr.sample_type,
-                          tsmp->proc_parent->handler_fn,
-                          tsmp->proc_parent->handler_fn_args,
-                          tsmp->mmap_buf,
-                          tsmp->proc_parent->pgmsk);
-
-    // Find out which mmap buffer we should process
-    
-    // Process
-    //psmpl->process_sample_buffer();
+    process_sample_buffer(&tsmp.pes,
+                          tsmp.proc_parent->attr.sample_type,
+                          tsmp.proc_parent->handler_fn,
+                          tsmp.proc_parent->handler_fn_args,
+                          tsmp.mmap_buf,
+                          tsmp.proc_parent->pgmsk);
 
     ioctl(fd, PERF_EVENT_IOC_REFRESH, 1);
 }
@@ -101,87 +92,27 @@ void procsmpl::init_attr()
     attr.precise_ip = 2;
 }
 
-int procsmpl::init_proc_sighandler()
-{
-    int ret;
-    struct sigaction sact;
-
-    // Tell process to listen to signals
-    // and run the thread signal handler
-    memset(&sact, 0, sizeof(sact));
-    sact.sa_sigaction = &thread_sighandler;
-    sact.sa_flags = SA_SIGINFO;
-
-    ret = sigaction(SIGIO, &sact, NULL);
-    if(ret)
-    {
-        perror("sigaction");
-        return ret;
-    }
-
-    sigset_t sold, snew;
-    sigemptyset(&sold);
-    sigemptyset(&snew);
-    sigaddset(&snew, SIGIO);
-
-    ret = sigprocmask(SIG_SETMASK, NULL, &sold);
-    if(ret)
-    {
-        perror("sigaction");
-        return 1;
-    }
-
-	if(sigismember(&sold, SIGIO))
-    {
-		ret = sigprocmask(SIG_UNBLOCK, &snew, NULL);
-        if(ret)
-        {
-            perror("sigaction");
-            return 1;
-        }
-    } 
-    return ret;
-}
-
-int procsmpl::prepare(pid_t p)
+void procsmpl::prepare(pid_t p)
 {
     // Sampling on PID p
     sample_pid = p;
 
     // Set up perf_event_attr
     init_attr();
-
-    // Set up process to listen for signals
-    init_proc_sighandler();
-
-    // Create sampler for main thread
-    thread_samplers.resize(1);
-    tsmp = &thread_samplers.front();
-    tsmp->init(this);
-
-    //tsmp.init(this);
-
-    return 0;
 }
 
 int procsmpl::begin_sampling()
 {
-    int ret;
-    for(unsigned int t=0; t<thread_samplers.size(); t++)
-    {
-        ret |= thread_samplers[t].begin_sampling();
-    }
-    return ret;
-    //return tsmp.begin_sampling();
+    int ret = tsmp.init(this);
+    if(ret)
+        return ret;
+
+    return tsmp.begin_sampling();
 }
 
 void procsmpl::end_sampling()
 {
-    for(unsigned int t=0; t<thread_samplers.size(); t++)
-    {
-        thread_samplers[t].end_sampling();
-    }
-    //tsmp.end_sampling();
+    tsmp.end_sampling();
 }
 
 int threadsmpl::init(procsmpl *parent)
@@ -200,13 +131,16 @@ int threadsmpl::init(procsmpl *parent)
     if(ret)
         return ret;
 
+    // Success
     ready = 1;
+
+    return 0;
 }
 
 int threadsmpl::init_perf_event(struct perf_event_attr *attr, size_t mmap_size)
 {
     // Create attr according to sample mode
-    fd = perf_event_open(attr, 0, -1, -1, 0);
+    fd = perf_event_open(attr, gettid(), -1, -1, 0);
     if(fd == -1)
     {
         perror("perf_event_open");
@@ -230,6 +164,44 @@ int threadsmpl::init_thread_sighandler()
 {
     int ret;
     struct f_owner_ex fown_ex;
+    struct sigaction sact;
+
+    // Set up signal handler
+    memset(&sact, 0, sizeof(sact));
+    sact.sa_sigaction = &thread_sighandler;
+    sact.sa_flags = SA_SIGINFO;
+
+    ret = sigaction(SIGIO, &sact, NULL);
+    if(ret)
+    {
+        perror("sigaction");
+        return ret;
+    }
+
+    // Unblock SIGIO signal if necessary
+    /*
+    sigset_t sold, snew;
+    sigemptyset(&sold);
+    sigemptyset(&snew);
+    sigaddset(&snew, SIGIO);
+
+    ret = sigprocmask(SIG_SETMASK, NULL, &sold);
+    if(ret)
+    {
+        perror("sigaction");
+        return 1;
+    }
+
+	if(sigismember(&sold, SIGIO))
+    {
+		ret = sigprocmask(SIG_UNBLOCK, &snew, NULL);
+        if(ret)
+        {
+            perror("sigaction");
+            return 1;
+        }
+    } 
+    */
 
     // Set perf event fd to signal
     ret = fcntl(fd, F_SETSIG, SIGIO);
@@ -247,8 +219,7 @@ int threadsmpl::init_thread_sighandler()
     // Set owner to current thread
     fown_ex.type = F_OWNER_TID;
     fown_ex.pid = gettid();
-    //ret = fcntl(fd, F_SETOWN_EX, (unsigned long)&fown_ex);
-    ret = fcntl(fd, F_SETOWN, getpid());
+    ret = fcntl(fd, F_SETOWN_EX, (unsigned long)&fown_ex);
     if(ret)
     {
         perror("fcntl");
@@ -291,7 +262,7 @@ void threadsmpl::end_sampling()
     ret = read(fd, &counter_value, sizeof(uint64_t));
     if(ret == -1)
         perror("read");
-    
+
     // Flush out remaining samples
     process_sample_buffer(&pes, 
                           proc_parent->attr.type,

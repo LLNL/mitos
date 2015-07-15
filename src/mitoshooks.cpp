@@ -1,5 +1,7 @@
 #include "mitoshooks.h"
 
+#include "Mitos.h"
+
 #include <stdio.h>
 #include <dlfcn.h>
 
@@ -10,7 +12,7 @@ int pthread_create(pthread_t *thread, pthread_attr_t *attr, void *(*start_routin
     if(!og_pthread_create)
         og_pthread_create = (pthread_create_fn_t)dlsym(RTLD_NEXT, "pthread_create");
 
-    fprintf(stderr, "pthread_create!\n");
+    Mitos_begin_sampler();
 
     return og_pthread_create(thread, attr, start_routine, arg);
 }
@@ -21,7 +23,7 @@ void pthread_exit(void *retval)
     if(!og_pthread_exit)
         og_pthread_exit = (pthread_exit_fn_t)dlsym(RTLD_NEXT, "pthread_exit");
 
-    fprintf(stderr, "pthread_exit!\n");
+    Mitos_end_sampler();
 
     og_pthread_exit(retval);
 }
