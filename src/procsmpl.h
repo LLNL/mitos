@@ -27,12 +27,16 @@ class procsmpl
 {
     friend class threadsmpl;
     friend class perf_event_sample;
+    friend void thread_sighandler(int sig, siginfo_t *info, void *extra);
 
 public:
     procsmpl();
     ~procsmpl();
 
     int prepare(pid_t PID);
+
+    int begin_sampling();
+    void end_sampling();
 
     void set_sample_period(uint64_t p) 
         { sample_period = p; }
@@ -79,19 +83,16 @@ class threadsmpl
     friend void thread_sighandler(int sig, siginfo_t *info, void *extra);
 
 public:
-    threadsmpl(procsmpl *parent);
-    ~threadsmpl();
-
     int begin_sampling();
     void end_sampling();
 
-    int init();
+    int init(procsmpl *parent);
 
-private:
+//private:
     int init_perf_event(struct perf_event_attr *attr, size_t mmap_size);
     int init_thread_sighandler();
 
-private:
+//private:
     procsmpl *proc_parent;
 
     int ready;

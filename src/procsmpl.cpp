@@ -5,7 +5,8 @@
 #include <fcntl.h>
 #include <pthread.h>
 
-procsmpl *psmpl = NULL;
+//__thread threadsmpl tsmp;
+threadsmpl *tsmp;
 
 pid_t gettid(void)
 {
@@ -23,6 +24,17 @@ void thread_sighandler(int sig, siginfo_t *info, void *extra)
 {
     int fd = info->si_fd;
 
+    fprintf(stderr, "SAMP!\n");
+
+    process_sample_buffer(&tsmp->pes,
+                          tsmp->proc_parent->attr.sample_type,
+                          tsmp->proc_parent->handler_fn,
+                          tsmp->proc_parent->handler_fn_args,
+                          tsmp->mmap_buf,
+                          tsmp->proc_parent->pgmsk);
+
+    // Find out which mmap buffer we should process
+    
     // Process
     //psmpl->process_sample_buffer();
 
@@ -49,7 +61,7 @@ procsmpl::~procsmpl()
 
 void procsmpl::init_attr()
 {
-    // event attr
+    // perf_event attr
     memset(&attr, 0, sizeof(struct perf_event_attr));
     attr.size = sizeof(struct perf_event_attr);
 
@@ -95,6 +107,7 @@ int procsmpl::init_proc_sighandler()
     struct sigaction sact;
 
     // Tell process to listen to signals
+    // and run the thread signal handler
     memset(&sact, 0, sizeof(sact));
     sact.sa_sigaction = &thread_sighandler;
     sact.sa_flags = SA_SIGINFO;
@@ -115,7 +128,7 @@ int procsmpl::init_proc_sighandler()
     if(ret)
     {
         perror("sigaction");
-        return ret;
+        return 1;
     }
 
 	if(sigismember(&sold, SIGIO))
@@ -124,10 +137,9 @@ int procsmpl::init_proc_sighandler()
         if(ret)
         {
             perror("sigaction");
-            return ret;
+            return 1;
         }
-    }
-
+    } 
     return ret;
 }
 
@@ -139,28 +151,46 @@ int procsmpl::prepare(pid_t p)
     // Set up perf_event_attr
     init_attr();
 
+    // Set up process to listen for signals
+    init_proc_sighandler();
+
     // Create sampler for main thread
-    thread_samplers.push_back(threadsmpl(this));
-    threadsmpl *main_thread = &thread_samplers.front();
-    main_thread->init();
+    thread_samplers.resize(1);
+    tsmp = &thread_samplers.front();
+    tsmp->init(this);
+
+    //tsmp.init(this);
 
     return 0;
 }
 
-threadsmpl::threadsmpl(procsmpl *parent)
-    : proc_parent(parent)
+int procsmpl::begin_sampling()
 {
+    int ret;
+    for(unsigned int t=0; t<thread_samplers.size(); t++)
+    {
+        ret |= thread_samplers[t].begin_sampling();
+    }
+    return ret;
+    //return tsmp.begin_sampling();
 }
 
-threadsmpl::~threadsmpl()
+void procsmpl::end_sampling()
 {
+    for(unsigned int t=0; t<thread_samplers.size(); t++)
+    {
+        thread_samplers[t].end_sampling();
+    }
+    //tsmp.end_sampling();
 }
 
-int threadsmpl::init()
+int threadsmpl::init(procsmpl *parent)
 {
     int ret;
     
     ready = 0;
+
+    proc_parent = parent;
 
     ret = init_perf_event(&proc_parent->attr, proc_parent->mmap_size);
     if(ret)
@@ -176,7 +206,7 @@ int threadsmpl::init()
 int threadsmpl::init_perf_event(struct perf_event_attr *attr, size_t mmap_size)
 {
     // Create attr according to sample mode
-    fd = perf_event_open(attr, gettid(), -1, -1, 0);
+    fd = perf_event_open(attr, 0, -1, -1, 0);
     if(fd == -1)
     {
         perror("perf_event_open");
@@ -202,23 +232,23 @@ int threadsmpl::init_thread_sighandler()
     struct f_owner_ex fown_ex;
 
     // Set perf event fd to signal
-    ret = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_ASYNC);
-    if(ret)
-    {
-        perror("fcntl");
-        return 1;
-    }
     ret = fcntl(fd, F_SETSIG, SIGIO);
     if(ret)
     {
         perror("fcntl");
         return 1;
     }
-
+    ret = fcntl(fd, F_SETFL, O_NONBLOCK | O_ASYNC);
+    if(ret)
+    {
+        perror("fcntl");
+        return 1;
+    }
     // Set owner to current thread
     fown_ex.type = F_OWNER_TID;
     fown_ex.pid = gettid();
-    ret = fcntl(fd, F_SETOWN_EX, (unsigned long)&fown_ex);
+    //ret = fcntl(fd, F_SETOWN_EX, (unsigned long)&fown_ex);
+    ret = fcntl(fd, F_SETOWN, getpid());
     if(ret)
     {
         perror("fcntl");
@@ -239,7 +269,11 @@ int threadsmpl::begin_sampling()
         return -1;
     }
 
-    ret = ioctl(fd, PERF_EVENT_IOC_REFRESH, 1);
+    ret = ioctl(fd, PERF_EVENT_IOC_RESET, 1);
+    if(ret)
+        perror("ioctl");
+
+    ret = ioctl(fd, PERF_EVENT_IOC_ENABLE, 1);
     if(ret)
         perror("ioctl");
 
