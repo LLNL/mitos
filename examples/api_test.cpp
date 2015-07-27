@@ -11,7 +11,7 @@ mitos_output mout;
 
 void sample_handler(perf_event_sample *sample, void *args)
 {
-    fprintf(stderr, "SAMP: cpu=%d, tid=%d\n", sample->cpu, sample->tid);
+    //fprintf(stderr, "SAMP: cpu=%d, tid=%d\n", sample->cpu, sample->tid);
     Mitos_write_sample(sample, &mout);
 }
 
@@ -76,16 +76,7 @@ int main(int argc, char **argv)
 
     Mitos_prepare(0);
 
-#pragma omp parallel
-    {
-        Mitos_begin_sampler();
-    }
-
     matmul(N,a,b,c);
 
-#pragma omp parallel
-    {
-        Mitos_end_sampler();
-    }
     Mitos_post_process(argv[0],&mout);
 }
