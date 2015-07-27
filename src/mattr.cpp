@@ -46,48 +46,47 @@ void mem_symbol::get_index(uint64_t a, size_t *d)
     }
 }
 
+void mem_symbol_splay_node::insert(mem_symbol m)
+{
+    // Find candidate location for m
+   if 
+    
+    // If candidate location is empty, put it there
+    
+    // Else recurse into candidate location
+    mem_symbol_splay_node *node = new mem_symbol_splay_node();
+    node->set_symbol(m);
+}
+
 mem_symbol_splay_tree::mem_symbol_splay_tree()
 {
-
+    root = NULL;
 }
 
 mem_symbol_splay_tree::~mem_symbol_splay_tree()
 {
-
+    delete root;
 }
 
-void mem_symbol_splay_tree::insert(mem_symbol m)
+mem_symbol_splay_node* mem_symbol_splay_tree::insert(mem_symbol m)
 {
-    all_mem_symbols.push_back(m);
+    if(root == NULL)
+    {
+        root = new mem_symbol_splay_node();
+        root->set_symbol(new mem_symbol(m));
+    }
 
+    mem_symbol_splay_node *new_node
 }
 
 void mem_symbol_splay_tree::remove(mem_symbol m)
 {
-    std::vector<mem_symbol>::iterator r;
-    r = find_container_itr(m.addr);
-    all_mem_symbols.erase(r);
+    return root->remove(addr);
 }
 
-mem_symbol* mem_symbol_splay_tree::find_container(uint64_t addr)
+mem_symbol_splay_node* mem_symbol_splay_tree::find(uint64_t addr)
 {
-    std::vector<mem_symbol>::iterator r;
-    r = find_container_itr(addr);
-    if(r == all_mem_symbols.end())
-        return NULL;
-    return (mem_symbol*)&(*r);
-}
-
-std::vector<mem_symbol>::iterator
-mem_symbol_splay_tree::find_container_itr(uint64_t addr)
-{
-    std::vector<mem_symbol>::iterator r;
-    for(r=all_mem_symbols.begin();r<all_mem_symbols.end();r++)
-    {
-        if(r->contains(addr))
-            return r;
-    }
-    return all_mem_symbols.end();
+    return root->find(addr);
 }
 
 mattr::mattr()
@@ -102,17 +101,18 @@ mattr::~mattr()
 
 void mattr::add_symbol(mem_symbol m)
 {
-    syms.insert(m);
+    tree.insert(m);
 }
 
 void mattr::add_symbol(const char* n, void *a, size_t s, size_t *d, unsigned int nd)
 {
     uint64_t addr = (uint64_t)a;
-    syms.insert(mem_symbol(n,addr,s,d,nd));
+    tree.insert(mem_symbol(n,addr,s,d,nd));
 }
 
-void mattr::add_symbol_vec(std::vector<mem_symbol> &v)
+mem_symbol* find_symbol(uint64_t addr)
 {
-    for(size_t i=0; i<v.size(); ++i)
-        add_symbol(v[i]);
+    mem_symbol_splay_node *node = tree.find_mem_symbol(addr);
+    return &node->get_symbol();
 }
+

@@ -262,14 +262,6 @@ void threadsmpl::end_sampling()
     ret = read(fd, &counter_value, sizeof(uint64_t));
     if(ret == -1)
         perror("read");
-
-    // Flush out remaining samples
-    process_sample_buffer(&pes, 
-                          proc_parent->attr.type,
-                          proc_parent->handler_fn,
-                          proc_parent->handler_fn_args,
-                          mmap_buf, 
-                          proc_parent->pgmsk); 
 }
 
 const char* Mitos_hit_type(struct perf_event_sample *s)

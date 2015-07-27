@@ -40,19 +40,42 @@ class mem_symbol
         unsigned int num_dims;
 };
 
+class mem_symbol_splay_node
+{
+    public:
+        mem_symbol_splay_node();
+        ~mem_symbol_splay_node();
+
+        void set_symbol(mem_symbol *m) { symbol = m; }
+        mem_symbol* get_symbol() { return symbol; }
+
+        bool contains(uint64_t addr) { return symbol->contains(addr); }
+
+        mem_symbol_splay_node* find(uint64_t addr);
+        mem_symbol_splay_node* insert(mem_symbol m);
+        void remove(mem_symbol m);
+
+    private:
+        mem_symbol *symbol;
+
+        mem_symbol_splay_node *parent;
+        mem_symbol_splay_node *left_child;
+        mem_symbol_splay_node *right_child;
+
+}
+
 class mem_symbol_splay_tree
 {
-
     public:
         mem_symbol_splay_tree();
         ~mem_symbol_splay_tree();
 
-        void insert(mem_symbol m);
+        mem_symbol_splay_node* find(uint64_t addr);
+        mem_symbol_splay_node* insert(mem_symbol m);
         void remove(mem_symbol m);
-        mem_symbol* find_container(uint64_t addr);
-        std::vector<mem_symbol>::iterator find_container_itr(uint64_t addr);
+
     private:
-        std::vector<mem_symbol> all_mem_symbols;
+        mem_symbol_splay_node *root;
 };
 
 class mattr
@@ -63,12 +86,11 @@ class mattr
 
         void add_symbol(mem_symbol m);
         void add_symbol(const char* n, void *a, size_t s, size_t *d, unsigned int nd);
-        void add_symbol_vec(std::vector<mem_symbol> &v);
 
-        mem_symbol* find_symbol(uint64_t addr) { return syms.find_container(addr); }
+        mem_symbol* find_symbol(uint64_t addr);
 
     private:
-        mem_symbol_splay_tree syms;
+        mem_symbol_splay_tree tree;
 };
 
 #endif
