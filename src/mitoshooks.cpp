@@ -19,6 +19,7 @@ void* routine_wrapper(void *args)
     func_args *routine_struct = (func_args*)args;
 
     fprintf(stderr, "Beginning Mitos sampler on thread %d\n", syscall(__NR_gettid));
+
     Mitos_begin_sampler();
 
     return routine_struct->func(routine_struct->args);
@@ -27,7 +28,6 @@ void* routine_wrapper(void *args)
 // pthread hooks
 int pthread_create(pthread_t *thread, pthread_attr_t *attr, void *(*start_routine) (void*), void *arg)
 {
-    int rc;
     static pthread_create_fn_t og_pthread_create = NULL;
     if(!og_pthread_create)
         og_pthread_create = (pthread_create_fn_t)dlsym(RTLD_NEXT, "pthread_create");

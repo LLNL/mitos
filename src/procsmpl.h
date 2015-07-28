@@ -33,8 +33,6 @@ public:
     procsmpl();
     ~procsmpl();
 
-    void prepare(pid_t PID);
-
     int begin_sampling();
     void end_sampling();
 
@@ -57,7 +55,6 @@ private:
     // perf event configuration
     struct perf_event_attr attr;
 
-    pid_t sample_pid;
     uint64_t sample_period;
     uint64_t sample_threshold;
     uint64_t sample_type;
@@ -70,6 +67,9 @@ private:
     // user-defined handler
     sample_handler_fn_t handler_fn;
     void *handler_fn_args;
+
+    // misc
+    bool first_time;
 };
 
 // Thread-local Sampler

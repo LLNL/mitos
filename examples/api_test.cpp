@@ -74,9 +74,9 @@ int main(int argc, char **argv)
     Mitos_set_sample_threshold(3);
     Mitos_set_sample_period(4000);
 
-    Mitos_prepare(0);
-
+    //Mitos_begin_sampler();
     matmul(N,a,b,c);
+    //Mitos_end_sampler();
 
     Mitos_post_process(argv[0],&mout);
 }

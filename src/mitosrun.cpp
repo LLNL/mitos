@@ -126,6 +126,8 @@ int main(int argc, char **argv)
 
     if(child == 0)
     {
+        setenv("LD_PRELOAD", "./src/libmitoshooks.so", 1);
+
         ptrace(PTRACE_TRACEME,0,0,0);
         int err = execvp(argv[cmdarg],&argv[cmdarg]);
         if(err)
@@ -160,8 +162,6 @@ int main(int argc, char **argv)
         Mitos_set_sample_threshold(thresh);
 
         Mitos_set_handler_fn(&sample_handler,NULL);
-
-        Mitos_prepare(child);
 
         Mitos_begin_sampler();
         {

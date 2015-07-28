@@ -21,11 +21,6 @@ void Mitos_set_handler_fn(sample_handler_fn_t h, void* args)
     m_procsmpl.set_handler_fn(h,args); 
 }
 
-void Mitos_prepare(pid_t pid) 
-{
-    m_procsmpl.prepare(pid); 
-}
-
 void Mitos_begin_sampler() 
 {
     m_procsmpl.begin_sampling(); 

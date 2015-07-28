@@ -42,8 +42,9 @@ procsmpl::procsmpl()
     mmap_size = (mmap_pages+1)*pgsz;
     pgmsk = mmap_pages*pgsz-1;
 
-    sample_pid = 0;
     handler_fn = NULL;
+
+    first_time = true;
 }
 
 procsmpl::~procsmpl()
@@ -92,17 +93,13 @@ void procsmpl::init_attr()
     attr.precise_ip = 2;
 }
 
-void procsmpl::prepare(pid_t p)
-{
-    // Sampling on PID p
-    sample_pid = p;
-
-    // Set up perf_event_attr
-    init_attr();
-}
-
 int procsmpl::begin_sampling()
 {
+    if(first_time)
+        init_attr();
+
+    first_time = false;
+
     int ret = tsmp.init(this);
     if(ret)
         return ret;
@@ -237,7 +234,7 @@ int threadsmpl::begin_sampling()
     if(!ready)
     {
         std::cerr << "Not ready to begin sampling!" << std::endl;
-        return -1;
+        return 1;
     }
 
     ret = ioctl(fd, PERF_EVENT_IOC_RESET, 1);
