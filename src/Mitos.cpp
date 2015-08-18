@@ -36,18 +36,10 @@ void Mitos_add_symbol(const char* n, void *a, size_t s, size_t *dims, unsigned i
     m_mattr.add_symbol(n,a,s,dims,ndims); 
 }
 
-void Mitos_resolve_symbol(struct perf_event_sample *s)
+int Mitos_resolve_symbol(struct perf_event_sample *s)
 {
     mem_symbol *m = m_mattr.find_symbol(s->addr);
-    if(m)
-    {
-        s->data_size = m->get_sz();
-        s->num_dims = m->get_num_dims();
-        s->data_symbol = m->get_name();
-
-        m->get_index(s->addr, s->access_index);
-    }
-    else
+    if(!m)
     {
         s->data_size = 0;
         s->num_dims = 1;
@@ -55,7 +47,16 @@ void Mitos_resolve_symbol(struct perf_event_sample *s)
         s->access_index[1] = 0;
         s->access_index[2] = 0;
         s->data_symbol = "??";
+
+        return 1;
     }
+    s->data_size = m->get_sz();
+    s->num_dims = m->get_num_dims();
+    s->data_symbol = m->get_name();
+
+    m->get_index(s->addr, s->access_index);
+
+    return 0;
 }
 
 long Mitos_x_index(struct perf_event_sample *s)
