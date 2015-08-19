@@ -27,7 +27,7 @@ int dump_hardware_xml(const char *filename)
         return 1;
     }
 
-    err = hwloc_topology_export_xml(topology, "hardware.xml");
+    err = hwloc_topology_export_xml(topology, filename);
     if(err)
     {
         std::cerr << "hwloc: Failed to export xml" << std::endl;

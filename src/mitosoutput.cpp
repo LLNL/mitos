@@ -19,11 +19,11 @@ using namespace InstructionAPI;
 
 #include "Mitos.h"
 
-int Mitos_create_output(mitos_output *mout)
+int Mitos_create_output(mitos_output *mout, char *prefix_name)
 {
     // Set top directory name
     std::stringstream ss_dname_topdir;
-    ss_dname_topdir << "mitos_" << std::time(NULL);
+    ss_dname_topdir << prefix_name << "_" << std::time(NULL);
     mout->dname_topdir = strdup(ss_dname_topdir.str().c_str());
 
     // Set data directory name
@@ -74,8 +74,8 @@ int Mitos_create_output(mitos_output *mout)
 int Mitos_pre_process(mitos_output *mout)
 {
     // Create hardware topology file for current hardware
-    std::string fname_hardware = std::string(mout->dname_topdir) + "/hardware.xml";
-    int err = dump_hardware_xml(fname_hardware.c_str());
+    std::string fname_hardware_local = std::string(mout->dname_topdir) + "_hardware.xml";
+    int err = dump_hardware_xml(fname_hardware_local.c_str());
     if(err)
     {
         std::cerr << "Mitos: Failed to create hardware topology file!\n";
@@ -83,7 +83,8 @@ int Mitos_pre_process(mitos_output *mout)
     }
 
     // hwloc puts the file in the current directory, need to move it
-    err = rename("hardware.xml", fname_hardware.c_str());
+    std::string fname_hardware_final = std::string(mout->dname_topdir) + "/hardware.xml";
+    err = rename(fname_hardware_local.c_str(), fname_hardware_final.c_str());
     if(err)
     {
         std::cerr << "Mitos: Failed to move hardware topology file to output directory!\n";

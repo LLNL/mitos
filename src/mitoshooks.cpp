@@ -18,7 +18,7 @@ void* routine_wrapper(void *args)
 {
     func_args *routine_struct = (func_args*)args;
 
-    fprintf(stderr, "Beginning Mitos sampler on thread %d\n", syscall(__NR_gettid));
+    //fprintf(stderr, "Beginning Mitos sampler on thread %d\n", syscall(__NR_gettid));
 
     Mitos_begin_sampler();
 
@@ -51,14 +51,39 @@ void pthread_exit(void *retval)
 }
 
 // MPI hooks
+mitos_output mout;
+
+void sample_handler(perf_event_sample *sample, void *args)
+{
+    //fprintf(stderr, "SAMP: cpu=%d, tid=%d\n", sample->cpu, sample->tid);
+    Mitos_write_sample(sample, &mout);
+}
+
 int MPI_Init(int *argc, char ***argv)
 {
-    fprintf(stderr, "MPI_Init!\n");
-    return PMPI_Init(argc, argv);
+    int ret = PMPI_Init(argc, argv);
+
+    int mpi_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+
+    char rank_prefix[32];
+    sprintf(rank_prefix, "rank_%d", mpi_rank);
+
+    Mitos_create_output(&mout, rank_prefix);
+    Mitos_pre_process(&mout);
+
+    Mitos_set_handler_fn(&sample_handler,NULL);
+    Mitos_set_sample_threshold(3);
+    Mitos_set_sample_period(4000);
+    Mitos_begin_sampler();
+
+    return ret;
 }
 
 int MPI_Finalize()
 {
-    fprintf(stderr, "MPI_Finalize!\n");
+    Mitos_end_sampler();
+    Mitos_post_process("/proc/self/exe", &mout);
+
     return PMPI_Finalize();
 }
