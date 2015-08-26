@@ -36,8 +36,9 @@ procsmpl::procsmpl()
 {
     // Defaults
     mmap_pages = 1;
-    sample_period = 4000;
-    sample_threshold = 7;
+    use_frequency = 1;
+    sample_frequency = 4000;
+    sample_latency_threshold = 8;
     pgsz = sysconf(_SC_PAGESIZE);
     mmap_size = (mmap_pages+1)*pgsz;
     pgmsk = mmap_pages*pgsz-1;
@@ -71,13 +72,21 @@ void procsmpl::init_attr()
     attr.sample_id_all = 0;
     attr.wakeup_events = 1;
 
-    attr.sample_period = sample_period;
-    attr.freq = 0;
+    if(use_frequency)
+    {
+        attr.sample_freq = sample_frequency;
+        attr.freq = 1;
+    }
+    else
+    {
+        attr.sample_period = sample_period;
+        attr.freq = 0;
+    }
 
     // Set up PEBS load sampling
     attr.type = PERF_TYPE_RAW;
     attr.config = 0x5101cd;          // MEM_TRANS_RETIRED:LATENCY_THRESHOLD
-    attr.config1 = sample_threshold; // latency threshold
+    attr.config1 = sample_latency_threshold; // latency threshold
     attr.sample_type =
         PERF_SAMPLE_IP |
         //PERF_SAMPLE_CALLCHAIN |

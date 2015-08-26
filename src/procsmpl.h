@@ -36,10 +36,12 @@ public:
     int begin_sampling();
     void end_sampling();
 
-    void set_sample_period(uint64_t p) 
-        { sample_period = p; }
-    void set_sample_threshold(uint64_t t) 
-        { sample_threshold = t; }
+    void set_sample_time_frequency(uint64_t p) 
+        { use_frequency = 1; sample_frequency = p; }
+    void set_sample_event_period(uint64_t p) 
+        { use_frequency = 0; sample_period = p; }
+    void set_sample_latency_threshold(uint64_t t) 
+        { sample_latency_threshold = t; }
 
     void set_handler_fn(sample_handler_fn_t h, void* args) 
         { handler_fn = h; handler_fn_args = args; }
@@ -55,8 +57,11 @@ private:
     // perf event configuration
     struct perf_event_attr attr;
 
+    uint64_t use_frequency;
+
     uint64_t sample_period;
-    uint64_t sample_threshold;
+    uint64_t sample_frequency;
+    uint64_t sample_latency_threshold;
     uint64_t sample_type;
 
     size_t mmap_pages;

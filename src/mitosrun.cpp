@@ -158,8 +158,8 @@ int main(int argc, char **argv)
             return 1;
         }
 
-        Mitos_set_sample_period(period);
-        Mitos_set_sample_threshold(thresh);
+        Mitos_set_sample_time_frequency(period);
+        Mitos_set_sample_latency_threshold(thresh);
 
         Mitos_set_handler_fn(&sample_handler,NULL);
 

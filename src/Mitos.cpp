@@ -6,14 +6,19 @@
 static procsmpl m_procsmpl;
 static mattr m_mattr;
 
-void Mitos_set_sample_period(uint64_t p) 
+void Mitos_set_sample_time_frequency(uint64_t p) 
 { 
-    m_procsmpl.set_sample_period(p); 
+    m_procsmpl.set_sample_time_frequency(p); 
 }
 
-void Mitos_set_sample_threshold(uint64_t t) 
+void Mitos_set_sample_event_period(uint64_t p) 
 { 
-    m_procsmpl.set_sample_threshold(t); 
+    m_procsmpl.set_sample_event_period(p); 
+}
+
+void Mitos_set_sample_latency_threshold(uint64_t t) 
+{ 
+    m_procsmpl.set_sample_latency_threshold(t); 
 }
 
 void Mitos_set_handler_fn(sample_handler_fn_t h, void* args) 

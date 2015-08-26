@@ -73,8 +73,8 @@ int MPI_Init(int *argc, char ***argv)
     Mitos_pre_process(&mout);
 
     Mitos_set_handler_fn(&sample_handler,NULL);
-    Mitos_set_sample_threshold(3);
-    Mitos_set_sample_period(4000);
+    Mitos_set_sample_latency_threshold(3);
+    Mitos_set_sample_time_frequency(4000);
     Mitos_begin_sampler();
 
     return ret;

@@ -25,8 +25,9 @@ extern "C" {
 #endif
 
 // Sampler configuration
-void Mitos_set_sample_period(uint64_t p);
-void Mitos_set_sample_threshold(uint64_t t);
+void Mitos_set_sample_time_frequency(uint64_t p);
+void Mitos_set_sample_event_period(uint64_t p);
+void Mitos_set_sample_latency_threshold(uint64_t t);
 void Mitos_set_handler_fn(sample_handler_fn_t h, void *args);
 
 // Sampler invocation
