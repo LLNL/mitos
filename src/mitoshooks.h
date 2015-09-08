@@ -1,6 +1,6 @@
 #include <bits/pthreadtypes.h>
 
-#include "mpi.h"
+//#include "mpi.h"
 
 // pthread hooks
 extern "C"
@@ -13,5 +13,5 @@ extern "C"
 }
 
 // MPI hooks
-int MPI_Init(int *argc, char ***argv);
-int MPI_Finalize();
+//int MPI_Init(int *argc, char ***argv);
+//int MPI_Finalize();
