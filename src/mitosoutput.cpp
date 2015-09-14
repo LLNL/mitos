@@ -131,6 +131,13 @@ int Mitos_post_process(const char *bin_name, mitos_output *mout)
     if(!sym_success)
     {
         std::cerr << "Mitos: Failed to open Symtab object for " << bin_name << std::endl;
+        std::cerr << "Saving raw data (no source/instruction attribution)" << std::endl;
+        int err = rename(mout->fname_raw, mout->fname_processed);
+        if(err)
+        {
+            std::cerr << "Mitos: Failed to rename raw output to " << mout->fname_processed << std::endl;
+        }
+
         return 1;
     }
 
