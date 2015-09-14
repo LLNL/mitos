@@ -19,7 +19,7 @@ using namespace InstructionAPI;
 
 #include "Mitos.h"
 
-int Mitos_create_output(mitos_output *mout, char *prefix_name)
+int Mitos_create_output(mitos_output *mout, const char *prefix_name)
 {
     // Set top directory name
     std::stringstream ss_dname_topdir;
@@ -121,7 +121,7 @@ int Mitos_write_sample(perf_event_sample *sample, mitos_output *mout)
     return 0;
 }
 
-int Mitos_post_process(char *bin_name, mitos_output *mout)
+int Mitos_post_process(const char *bin_name, mitos_output *mout)
 {
     // Open Symtab object and code source object
     Symtab *symtab_obj;
@@ -134,7 +134,7 @@ int Mitos_post_process(char *bin_name, mitos_output *mout)
         return 1;
     }
 
-    symtab_code_src = new SymtabCodeSource(bin_name);
+    symtab_code_src = new SymtabCodeSource(strdup(bin_name));
 
     // Get machine information
     unsigned int inst_length = InstructionDecoder::maxInstructionLength;

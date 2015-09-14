@@ -11,5 +11,5 @@ add_executable(matmul matmul.cpp)
 add_executable(mpi_matmul mpi_matmul.cpp)
 
 target_link_libraries(api_test mitos symtabAPI)
-target_link_libraries(mpi_matmul ${MPI_LIBRARIES})
+target_link_libraries(mpi_matmul mitos mitoshooks ${MPI_LIBRARIES})
 

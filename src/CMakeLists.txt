@@ -1,5 +1,5 @@
 # Include dirs required
-# include_directories(${MPI_INCLUDE_PATH})
+include_directories(${MPI_INCLUDE_PATH})
 include_directories(${DYNINST_INCLUDE_DIR})
 
 # Source and header files
@@ -16,8 +16,7 @@ add_library(mitoshooks SHARED ${MITOSHOOKS_SRC_FILES})
 add_executable(mitosrun mitosrun.cpp)
 
 # Linkage
-target_link_libraries(mitos hwloc symtabAPI instructionAPI parseAPI ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(mitoshooks mitos) # ${MPI_LIBRARIES})
+target_link_libraries(mitos mitoshooks hwloc symtabAPI instructionAPI parseAPI ${CMAKE_THREAD_LIBS_INIT} ${MPI_LIBRARIES})
 target_link_libraries(mitosrun mitos)
 
 # Install

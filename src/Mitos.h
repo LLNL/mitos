@@ -46,10 +46,10 @@ const char* Mitos_hit_type(struct perf_event_sample *s);
 const char* Mitos_data_source(struct perf_event_sample *s);
 
 // Output
-int Mitos_create_output(mitos_output *mout, char *prefix_name = "mitos");
+int Mitos_create_output(mitos_output *mout, const char *prefix_name = "mitos");
 int Mitos_pre_process(mitos_output *mout);
 int Mitos_write_sample(perf_event_sample *s, mitos_output *mout);
-int Mitos_post_process(char *bin_name, mitos_output *mout);
+int Mitos_post_process(const char *bin_name, mitos_output *mout);
 
 #ifdef __cplusplus
 } // extern "C"
