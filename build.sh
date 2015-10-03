@@ -16,3 +16,5 @@ export hwloc_LIB=$(./bin/spack location -i hwloc)/lib
 export C_INCLUDE_PATH=$hwloc_INC
 export CPLUS_INCLUDE_PATH=$hwloc_INC
 export LD_LIBRARY_PATH=$hwloc_LIB
+
+cd ..
