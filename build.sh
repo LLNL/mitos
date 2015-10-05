@@ -13,8 +13,8 @@ export Dyninst_DIR=$(./bin/spack location -i dyninst)/lib/cmake/Dyninst
 export hwloc_INC=$(./bin/spack location -i hwloc)/include
 export hwloc_LIB=$(./bin/spack location -i hwloc)/lib
 
-export C_INCLUDE_PATH=$hwloc_INC
-export CPLUS_INCLUDE_PATH=$hwloc_INC
-export LD_LIBRARY_PATH=$hwloc_LIB
+export C_INCLUDE_PATH=$hwloc_INC:$C_INCLUDE_PATH
+export CPLUS_INCLUDE_PATH=$hwloc_INC:$CPLUS_INCLUDE_PATH
+export LD_LIBRARY_PATH=$hwloc_LIB:$LD_LIBRARY_PATH
 
 cd ..
