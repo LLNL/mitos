@@ -14,7 +14,6 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 find_package(Threads REQUIRED)
 find_package(PerfEvents REQUIRED)
 find_package(MPI REQUIRED)
-find_package(Boost REQUIRED)
 find_package(Dyninst REQUIRED SymtabAPI InstructionAPI ParseAPI)
 find_package(OpenMP)
 
