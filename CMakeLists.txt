@@ -13,12 +13,28 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 # Packages required
 find_package(Threads REQUIRED)
 find_package(PerfEvents REQUIRED)
-find_package(MPI REQUIRED)
-find_package(Dyninst REQUIRED SymtabAPI InstructionAPI ParseAPI)
-find_package(OpenMP)
 
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+# Non-essential packages
+find_package(OpenMP)
+find_package(MPI)
+find_package(Dyninst QUIET COMPONENTS SymtabAPI InstructionAPI ParseAPI)
+if(Dyninst_FOUND)
+    message(STATUS "Found Dyninst: ${DYNINST_INCLUDE_DIR}")
+else()
+    message(STATUS "Could NOT find Dyninst")
+endif()
+
+# C-Defines for non-essential packages
+if(MPI_FOUND)
+    add_definitions(-DUSE_MPI)
+endif()
+
+if(Dyninst_FOUND)
+    add_definitions(-DUSE_DYNINST)
+endif()
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
 # Subdirectories
 add_subdirectory(src)

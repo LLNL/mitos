@@ -50,6 +50,7 @@ void pthread_exit(void *retval)
     og_pthread_exit(retval);
 }
 
+#ifdef USE_MPI
 // MPI hooks
 mitos_output mout;
 
@@ -111,3 +112,4 @@ int MPI_Finalize()
 
     return PMPI_Finalize();
 }
+#endif // USE_MPI

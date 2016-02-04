@@ -6,6 +6,12 @@
 #include <string>
 #include <ctime>
 
+#include "hwloc_dump.h"
+
+#include "Mitos.h"
+
+#ifdef USE_DYNINST
+
 #include <LineInformation.h> // symtabAPI
 #include <CodeObject.h> // parseAPI
 #include <InstructionDecoder.h> // instructionAPI
@@ -14,10 +20,9 @@ using namespace SymtabAPI;
 using namespace ParseAPI;
 using namespace InstructionAPI;
 
-#include "hwloc_dump.h"
-#include "x86_util.h"
+#include "x86_util.h" // getReadSize using instructionAPI
 
-#include "Mitos.h"
+#endif // USE_DYNINST
 
 int Mitos_create_output(mitos_output *mout, const char *prefix_name)
 {
@@ -123,6 +128,25 @@ int Mitos_write_sample(perf_event_sample *sample, mitos_output *mout)
 
 int Mitos_post_process(const char *bin_name, mitos_output *mout)
 {
+    int err = 0;
+
+    // Open input/output files
+    std::ifstream fraw(mout->fname_raw);
+    std::ofstream fproc(mout->fname_processed);
+
+#ifndef USE_DYNINST
+    // No Dyninst, no post-processing
+    err = rename(mout->fname_raw, mout->fname_processed);
+    if(err)
+    {
+        std::cerr << "Mitos: Failed to rename raw output to " << mout->fname_processed << std::endl;
+    }
+
+    fproc.close();
+    fraw.close();
+
+    return 0;
+#else
     // Open Symtab object and code source object
     Symtab *symtab_obj;
     SymtabCodeSource *symtab_code_src;
@@ -132,11 +156,14 @@ int Mitos_post_process(const char *bin_name, mitos_output *mout)
     {
         std::cerr << "Mitos: Failed to open Symtab object for " << bin_name << std::endl;
         std::cerr << "Saving raw data (no source/instruction attribution)" << std::endl;
-        int err = rename(mout->fname_raw, mout->fname_processed);
+        err = rename(mout->fname_raw, mout->fname_processed);
         if(err)
         {
             std::cerr << "Mitos: Failed to rename raw output to " << mout->fname_processed << std::endl;
         }
+
+        fproc.close();
+        fraw.close();
 
         return 1;
     }
@@ -146,10 +173,6 @@ int Mitos_post_process(const char *bin_name, mitos_output *mout)
     // Get machine information
     unsigned int inst_length = InstructionDecoder::maxInstructionLength;
     Architecture arch = symtab_obj->getArchitecture();
-
-    // Open input/output files
-    std::ifstream fraw(mout->fname_raw);
-    std::ofstream fproc(mout->fname_processed);
 
     // Write header for processed samples
     fproc << "source,line,instruction,bytes,ip,variable,buffer_size,dims,xidx,yidx,zidx,pid,tid,time,addr,cpu,latency,data_src\n";
@@ -213,12 +236,14 @@ int Mitos_post_process(const char *bin_name, mitos_output *mout)
     fproc.close();
     fraw.close();
 
-    int err = remove(mout->fname_raw);
+    err = remove(mout->fname_raw);
     if(err)
     {
         std::cerr << "Mitos: Failed to delete raw sample file!\n";
         return 1;
     }
+
+#endif // USE_DYNINST
 
     return 0;
 }

@@ -16,8 +16,17 @@ add_library(mitoshooks SHARED ${MITOSHOOKS_SRC_FILES})
 add_executable(mitosrun mitosrun.cpp)
 
 # Linkage
-target_link_libraries(mitos mitoshooks hwloc symtabAPI instructionAPI parseAPI ${CMAKE_THREAD_LIBS_INIT} ${MPI_LIBRARIES})
+target_link_libraries(mitos mitoshooks hwloc ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(mitosrun mitos)
+
+if(MPI_FOUND)
+    target_link_libraries(mitos ${MPI_LIBRARIES}) 
+endif()
+
+if(Dyninst_FOUND)
+    target_link_libraries(mitos symtabAPI instructionAPI parseAPI) 
+endif()
+
 
 # Install
 install(FILES ${MITOS_HDR_PUBLIC}
