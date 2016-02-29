@@ -81,6 +81,6 @@ Thanks to Todd Gamblin for suggestions and for giving Mitos a proper build setup
 # License
 
 Mitos is released as part of MemAxes under an LGPL license. For more
-details see the LICENSE file.
+details see the [LICENSE](/LICENSE) file.
 
 `LLNL-CODE-663358`
