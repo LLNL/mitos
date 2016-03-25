@@ -126,8 +126,6 @@ int main(int argc, char **argv)
 
     if(child == 0)
     {
-        setenv("LD_PRELOAD", "./src/libmitoshooks.so", 1);
-
         ptrace(PTRACE_TRACEME,0,0,0);
         int err = execvp(argv[cmdarg],&argv[cmdarg]);
         if(err)

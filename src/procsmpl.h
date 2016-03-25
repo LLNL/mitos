@@ -13,14 +13,17 @@
 #include <pthread.h>
 #include <signal.h>
 
-#include <iostream>
-#include <iomanip>
-#include <vector>
-
 #include "Mitos.h"
 
 class procsmpl;
 class threadsmpl;
+
+struct perf_event_container
+{
+    int fd;
+    struct perf_event_attr attr;
+    struct perf_event_mmap_page *mmap_buf;
+};
 
 // Process-wide sampler
 class procsmpl
@@ -36,6 +39,8 @@ public:
     int begin_sampling();
     void end_sampling();
 
+    void set_pid(pid_t p) 
+        { target_pid = p; }
     void set_sample_time_frequency(uint64_t p) 
         { use_frequency = 1; sample_frequency = p; }
     void set_sample_event_period(uint64_t p) 
@@ -46,16 +51,16 @@ public:
     void set_handler_fn(sample_handler_fn_t h, void* args) 
         { handler_fn = h; handler_fn_args = args; }
 
-    inline bool has_attribute(uint32_t a) 
-        { return this->attr.sample_type & a; }
-
 private:
     // set up perf_event_attr
-    void init_attr();
+    void init_attrs();
 
 private:
     // perf event configuration
-    struct perf_event_attr attr;
+    int num_attrs;
+    struct perf_event_attr *attrs;
+
+    pid_t target_pid;
 
     uint64_t use_frequency;
 
@@ -90,17 +95,18 @@ public:
     int init(procsmpl *parent);
 
 //private:
-    int init_perf_event(struct perf_event_attr *attr, size_t mmap_size);
+    int init_perf_events(struct perf_event_attr *attrs, int num_attrs, size_t mmap_size);
     int init_thread_sighandler();
 
 //private:
     procsmpl *proc_parent;
 
     int ready;
-    int fd;
-    struct perf_event_mmap_page *mmap_buf;
+
+    int num_events;
+    struct perf_event_container *events;
+
     perf_event_sample pes;
-    uint64_t counter_value;
 };
 
 #endif

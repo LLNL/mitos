@@ -18,6 +18,7 @@ add_executable(mitosrun mitosrun.cpp)
 # Linkage
 target_link_libraries(mitos mitoshooks hwloc ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(mitosrun mitos)
+target_link_libraries(mitoshooks dl)
 
 if(MPI_FOUND)
     target_link_libraries(mitos ${MPI_LIBRARIES}) 
