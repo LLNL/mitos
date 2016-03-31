@@ -107,7 +107,7 @@ int Mitos_write_sample(perf_event_sample *sample, mitos_output *mout)
     Mitos_resolve_symbol(sample);
 
     fprintf(mout->fout_raw,
-            "%llu,%s,%llu,%llu,%llu,%llu,%llu,%u,%u,%llu,%llu,%u,%llu,%llu\n",
+            "%llu,%s,%llu,%llu,%llu,%llu,%llu,%u,%u,%llu,%llu,%u,%llu,%s,%s,%s,%s,%s\n",
             sample->ip,
             sample->data_symbol,
             sample->data_size,
@@ -121,7 +121,12 @@ int Mitos_write_sample(perf_event_sample *sample, mitos_output *mout)
             sample->addr,
             sample->cpu,
             sample->weight,
-            sample->data_src);
+            Mitos_memory_level(sample),
+            Mitos_hit_type(sample),
+            Mitos_op_type(sample),
+            Mitos_snoop_mode(sample),
+            Mitos_tlb_access(sample)
+            );
     
     return 0;
 }
@@ -175,7 +180,7 @@ int Mitos_post_process(const char *bin_name, mitos_output *mout)
     Architecture arch = symtab_obj->getArchitecture();
 
     // Write header for processed samples
-    fproc << "source,line,instruction,bytes,ip,variable,buffer_size,dims,xidx,yidx,zidx,pid,tid,time,addr,cpu,latency,data_src\n";
+    fproc << "source,line,instruction,bytes,ip,variable,buffer_size,dims,xidx,yidx,zidx,pid,tid,time,addr,cpu,latency,level,hit_type,op_type,snoop_mode,tlb_access\n";
 
     // Read raw samples one by one and get attribute from ip
     uint64_t ip;

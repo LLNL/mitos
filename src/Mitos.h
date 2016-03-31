@@ -42,8 +42,12 @@ int Mitos_resolve_symbol(struct perf_event_sample *s);
 long Mitos_x_index(struct perf_event_sample *s);
 long Mitos_y_index(struct perf_event_sample *s);
 long Mitos_z_index(struct perf_event_sample *s);
+
 const char* Mitos_hit_type(struct perf_event_sample *s);
-const char* Mitos_data_source(struct perf_event_sample *s);
+const char* Mitos_memory_level(struct perf_event_sample *s);
+const char* Mitos_op_type(struct perf_event_sample *s);
+const char* Mitos_snoop_mode(struct perf_event_sample *s);
+const char* Mitos_tlb_access(struct perf_event_sample *s);
 
 // Output
 int Mitos_create_output(mitos_output *mout, const char *prefix_name = "mitos");
@@ -73,17 +77,17 @@ struct perf_event_sample
     uint32_t   cpu, res;            /* if PERF_SAMPLE_CPU */
     uint64_t   period;              /* if PERF_SAMPLE_PERIOD */
     //struct read_format v;         /* if PERF_SAMPLE_READ */
-    uint64_t   nr;                  /* if PERF_SAMPLE_CALLCHAIN */
-    uint64_t  *ips;                 /* if PERF_SAMPLE_CALLCHAIN */
-    uint32_t   raw_size;            /* if PERF_SAMPLE_RAW */
-    char      *raw_data;            /* if PERF_SAMPLE_RAW */
-    uint64_t   bnr;                 /* if PERF_SAMPLE_BRANCH_STACK */
+    //uint64_t   nr;                  /* if PERF_SAMPLE_CALLCHAIN */
+    //uint64_t  *ips;                 /* if PERF_SAMPLE_CALLCHAIN */
+    //uint32_t   raw_size;            /* if PERF_SAMPLE_RAW */
+    //char      *raw_data;            /* if PERF_SAMPLE_RAW */
+    //uint64_t   bnr;                 /* if PERF_SAMPLE_BRANCH_STACK */
     //struct perf_branch_entry *lbr; /* if PERF_SAMPLE_BRANCH_STACK */
-    uint64_t   abi;                 /* if PERF_SAMPLE_REGS_USER */
-    uint64_t  *regs;                /* if PERF_SAMPLE_REGS_USER */
-    uint64_t   stack_size;          /* if PERF_SAMPLE_STACK_USER */
-    char      *stack_data;          /* if PERF_SAMPLE_STACK_USER */
-    uint64_t   dyn_size;            /* if PERF_SAMPLE_STACK_USER */
+    //uint64_t   abi;                 /* if PERF_SAMPLE_REGS_USER */
+    //uint64_t  *regs;                /* if PERF_SAMPLE_REGS_USER */
+    //uint64_t   stack_size;          /* if PERF_SAMPLE_STACK_USER */
+    //char      *stack_data;          /* if PERF_SAMPLE_STACK_USER */
+    //uint64_t   dyn_size;            /* if PERF_SAMPLE_STACK_USER */
     uint64_t   weight;              /* if PERF_SAMPLE_WEIGHT */
     uint64_t   data_src;            /* if PERF_SAMPLE_DATA_SRC */
     uint64_t   transaction;         /* if PERF_SAMPLE_TRANSACTION */
@@ -92,6 +96,12 @@ struct perf_event_sample
     size_t num_dims;
     size_t access_index[3];
     const char *data_symbol;
+
+    const char *mem_op;
+    const char *mem_lvl;
+    const char *mem_snoop;
+    const char *mem_lock;
+    const char *mem_tlb;
 };
 
 struct mitos_output

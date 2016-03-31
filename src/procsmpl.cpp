@@ -337,7 +337,7 @@ const char* Mitos_hit_type(struct perf_event_sample *s)
     return "Invalid Data Source";
 }
 
-const char* Mitos_data_source(struct perf_event_sample *s)
+const char* Mitos_memory_level(struct perf_event_sample *s)
 {
     uint64_t lvl_bits = s->data_src >> PERF_MEM_LVL_SHIFT;
 
@@ -365,6 +365,64 @@ const char* Mitos_data_source(struct perf_event_sample *s)
         return "I/O Memory";
     else if(lvl_bits & PERF_MEM_LVL_UNC)
         return "Uncached Memory";
+
+    return "Invalid Data Source";
+}
+
+const char* Mitos_op_type(struct perf_event_sample *s)
+{
+    uint64_t op_bits = s->data_src >> PERF_MEM_OP_SHIFT;
+
+    if(op_bits & PERF_MEM_OP_NA)
+        return "Not Available";
+    else if(op_bits & PERF_MEM_OP_LOAD)
+        return "Load";
+    else if(op_bits & PERF_MEM_OP_STORE)
+        return "Store";
+    else if(op_bits & PERF_MEM_OP_PFETCH)
+        return "Prefetch";
+    else if(op_bits & PERF_MEM_OP_EXEC)
+        return "Exec";
+
+    return "Invalid Data Source";
+}
+
+const char* Mitos_snoop_mode(struct perf_event_sample *s)
+{
+    uint64_t snoop_bits = s->data_src >> PERF_MEM_SNOOP_SHIFT;
+
+    if(snoop_bits & PERF_MEM_SNOOP_NA)
+        return "Not Available";
+    else if(snoop_bits & PERF_MEM_SNOOP_NONE)
+        return "Snoop None";
+    else if(snoop_bits & PERF_MEM_SNOOP_HIT)
+        return "Snoop Hit";
+    else if(snoop_bits & PERF_MEM_SNOOP_MISS)
+        return "Snoop Miss";
+    else if(snoop_bits & PERF_MEM_SNOOP_HITM)
+        return "Snoop Hit Modified";
+
+    return "Invalid Data Source";
+}
+
+const char* Mitos_tlb_access(struct perf_event_sample *s)
+{
+    uint64_t tlb_bits = s->data_src >> PERF_MEM_TLB_SHIFT;
+
+    if(tlb_bits & PERF_MEM_TLB_NA)
+        return "Not Available";
+    else if(tlb_bits & PERF_MEM_TLB_HIT)
+        return "TLB Hit";
+    else if(tlb_bits & PERF_MEM_TLB_MISS)
+        return "TLB Miss";
+    else if(tlb_bits & PERF_MEM_TLB_L1)
+        return "TLB L1";
+    else if(tlb_bits & PERF_MEM_TLB_L2)
+        return "TLB L2";
+    else if(tlb_bits & PERF_MEM_TLB_WK)
+        return "TLB Hardware Walker";
+    else if(tlb_bits & PERF_MEM_TLB_OS)
+        return "TLB OS Fault Handler";
 
     return "Invalid Data Source";
 }
