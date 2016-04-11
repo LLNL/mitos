@@ -121,11 +121,11 @@ int Mitos_write_sample(perf_event_sample *sample, mitos_output *mout)
             sample->addr,
             sample->cpu,
             sample->weight,
-            Mitos_memory_level(sample),
-            Mitos_hit_type(sample),
-            Mitos_op_type(sample),
-            Mitos_snoop_mode(sample),
-            Mitos_tlb_access(sample)
+            sample->mem_lvl,
+            sample->mem_hit,
+            sample->mem_op,
+            sample->mem_snoop,
+            sample->mem_tlb
             );
     
     return 0;

@@ -18,3 +18,9 @@ int process_sample_buffer(struct perf_event_sample *pes,
                           void* handler_fn_args,
                           struct perf_event_mmap_page *mmap_buf, 
                           size_t pgmsk);
+
+const char* datasource_mem_hit(uint64_t datasource);
+const char* datasource_mem_lvl(uint64_t datasource);
+const char* datasource_mem_op(uint64_t datasource);
+const char* datasource_mem_snoop(uint64_t datasource);
+const char* datasource_mem_tlb(uint64_t datasource);

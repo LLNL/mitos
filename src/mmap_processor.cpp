@@ -128,6 +128,12 @@ int process_single_sample(struct perf_event_sample *pes,
     if(event_type &(PERF_SAMPLE_DATA_SRC))
     {
         ret |= read_mmap_buffer(mmap_buf, pgmsk, (char*)&pes->data_src, sizeof(uint64_t));
+
+        pes->mem_hit = datasource_mem_hit(pes->data_src);
+        pes->mem_lvl = datasource_mem_lvl(pes->data_src);
+        pes->mem_op = datasource_mem_op(pes->data_src);
+        pes->mem_snoop = datasource_mem_snoop(pes->data_src);
+        pes->mem_tlb = datasource_mem_tlb(pes->data_src);
     }
 
     if(handler_fn)
@@ -178,4 +184,106 @@ int process_sample_buffer(struct perf_event_sample *pes,
     }
 }
 
+const char* datasource_mem_hit(uint64_t datasource)
+{
+    uint64_t lvl_bits = datasource >> PERF_MEM_LVL_SHIFT;
 
+    if(lvl_bits & PERF_MEM_LVL_NA)
+        return "Not Available";
+    else if(lvl_bits & PERF_MEM_LVL_HIT)
+        return "Hit";
+    else if(lvl_bits & PERF_MEM_LVL_MISS)
+        return "Miss";
+
+    return "Invalid Data Source";
+}
+
+const char* datasource_mem_lvl(uint64_t datasource)
+{
+    uint64_t lvl_bits = datasource >> PERF_MEM_LVL_SHIFT;
+
+    if(lvl_bits & PERF_MEM_LVL_NA)
+        return "Not Available";
+    else if(lvl_bits & PERF_MEM_LVL_L1)
+        return "L1";
+    else if(lvl_bits & PERF_MEM_LVL_LFB)
+        return "LFB";
+    else if(lvl_bits & PERF_MEM_LVL_L2)
+        return "L2";
+    else if(lvl_bits & PERF_MEM_LVL_L3)
+        return "L3";
+    else if(lvl_bits & PERF_MEM_LVL_LOC_RAM)
+        return "Local RAM";
+    else if(lvl_bits & PERF_MEM_LVL_REM_RAM1)
+        return "Remote RAM 1 Hop";
+    else if(lvl_bits & PERF_MEM_LVL_REM_RAM2)
+        return "Remote RAM 2 Hops";
+    else if(lvl_bits & PERF_MEM_LVL_REM_CCE1)
+        return "Remote Cache 1 Hops";
+    else if(lvl_bits & PERF_MEM_LVL_REM_CCE2)
+        return "Remote Cache 2 Hops";
+    else if(lvl_bits & PERF_MEM_LVL_IO)
+        return "I/O Memory";
+    else if(lvl_bits & PERF_MEM_LVL_UNC)
+        return "Uncached Memory";
+
+    return "Invalid Data Source";
+}
+
+const char* datasource_mem_op(uint64_t datasource)
+{
+    uint64_t op_bits = datasource >> PERF_MEM_OP_SHIFT;
+
+    if(op_bits & PERF_MEM_OP_NA)
+        return "Not Available";
+    else if(op_bits & PERF_MEM_OP_LOAD)
+        return "Load";
+    else if(op_bits & PERF_MEM_OP_STORE)
+        return "Store";
+    else if(op_bits & PERF_MEM_OP_PFETCH)
+        return "Prefetch";
+    else if(op_bits & PERF_MEM_OP_EXEC)
+        return "Exec";
+
+    return "Invalid Data Source";
+}
+
+const char* datasource_mem_snoop(uint64_t datasource)
+{
+    uint64_t snoop_bits = datasource >> PERF_MEM_SNOOP_SHIFT;
+
+    if(snoop_bits & PERF_MEM_SNOOP_NA)
+        return "Not Available";
+    else if(snoop_bits & PERF_MEM_SNOOP_NONE)
+        return "Snoop None";
+    else if(snoop_bits & PERF_MEM_SNOOP_HIT)
+        return "Snoop Hit";
+    else if(snoop_bits & PERF_MEM_SNOOP_MISS)
+        return "Snoop Miss";
+    else if(snoop_bits & PERF_MEM_SNOOP_HITM)
+        return "Snoop Hit Modified";
+
+    return "Invalid Data Source";
+}
+
+const char* datasource_mem_tlb(uint64_t datasource)
+{
+    uint64_t tlb_bits = datasource >> PERF_MEM_TLB_SHIFT;
+
+    if(tlb_bits & PERF_MEM_TLB_NA)
+        return "Not Available";
+    else if(tlb_bits & PERF_MEM_TLB_HIT)
+        return "TLB Hit";
+    else if(tlb_bits & PERF_MEM_TLB_MISS)
+        return "TLB Miss";
+    else if(tlb_bits & PERF_MEM_TLB_L1)
+        return "TLB L1";
+    else if(tlb_bits & PERF_MEM_TLB_L2)
+        return "TLB L2";
+    else if(tlb_bits & PERF_MEM_TLB_WK)
+        return "TLB Hardware Walker";
+    else if(tlb_bits & PERF_MEM_TLB_OS)
+        return "TLB OS Fault Handler";
+
+    return "Invalid Data Source";
+}

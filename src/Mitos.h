@@ -43,12 +43,6 @@ long Mitos_x_index(struct perf_event_sample *s);
 long Mitos_y_index(struct perf_event_sample *s);
 long Mitos_z_index(struct perf_event_sample *s);
 
-const char* Mitos_hit_type(struct perf_event_sample *s);
-const char* Mitos_memory_level(struct perf_event_sample *s);
-const char* Mitos_op_type(struct perf_event_sample *s);
-const char* Mitos_snoop_mode(struct perf_event_sample *s);
-const char* Mitos_tlb_access(struct perf_event_sample *s);
-
 // Output
 int Mitos_create_output(mitos_output *mout, const char *prefix_name = "mitos");
 int Mitos_pre_process(mitos_output *mout);
@@ -97,8 +91,9 @@ struct perf_event_sample
     size_t access_index[3];
     const char *data_symbol;
 
-    const char *mem_op;
+    const char *mem_hit;
     const char *mem_lvl;
+    const char *mem_op;
     const char *mem_snoop;
     const char *mem_lock;
     const char *mem_tlb;
