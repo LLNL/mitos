@@ -36,6 +36,7 @@ void Mitos_end_sampler();
 
 // Memory attribution
 void Mitos_add_symbol(const char* n, void *a, size_t s, size_t *dims, unsigned int ndims);
+void Mitos_remove_symbol(const char* n);
 int Mitos_resolve_symbol(struct perf_event_sample *s);
 
 // Get friendly sample information

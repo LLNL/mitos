@@ -50,7 +50,9 @@ class mem_symbol_splay_tree
         void insert(mem_symbol m);
         void remove(mem_symbol m);
         mem_symbol* find_container(uint64_t addr);
+		mem_symbol* find_symbol(const char* name);
         std::vector<mem_symbol>::iterator find_container_itr(uint64_t addr);
+        std::vector<mem_symbol>::iterator find_symbol_itr(const char* name);
     private:
         std::vector<mem_symbol> all_mem_symbols;
 };
@@ -64,6 +66,8 @@ class mattr
         void add_symbol(mem_symbol m);
         void add_symbol(const char* n, void *a, size_t s, size_t *d, unsigned int nd);
         void add_symbol_vec(std::vector<mem_symbol> &v);
+
+		void remove_symbol(const char* name);
 
         mem_symbol* find_symbol(uint64_t addr) { return syms.find_container(addr); }
 
