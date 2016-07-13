@@ -146,7 +146,7 @@ void mattr::remove_symbol(const char* name)
 	mem_symbol* rm_symbol = syms.find_symbol(name);
 	if (!rm_symbol)
 	{
-		std::cerr << "Unable to find symbol: " << name << std::endl;
+		//std::cerr << "Unable to find symbol: " << name << std::endl;
 		return;
 	}
 	syms.remove(*rm_symbol);
