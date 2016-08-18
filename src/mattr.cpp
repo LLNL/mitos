@@ -1,7 +1,10 @@
 #include "mattr.h"
 
+#include <iostream>
+#include <string>
 #include <stdlib.h>
 #include <string.h>
+
 
 mem_symbol::mem_symbol()
 {
@@ -90,6 +93,27 @@ mem_symbol_splay_tree::find_container_itr(uint64_t addr)
     return all_mem_symbols.end();
 }
 
+mem_symbol* mem_symbol_splay_tree::find_symbol(const char* name)
+{
+	std::vector<mem_symbol>::iterator r = find_symbol_itr(name);
+	if (r == all_mem_symbols.end())
+		return NULL;
+	return (mem_symbol*) &(*r);
+}
+
+std::vector<mem_symbol>::iterator
+mem_symbol_splay_tree::find_symbol_itr(const char* name)
+{
+	std::vector<mem_symbol>::iterator r;
+	for (r = all_mem_symbols.begin(); r != all_mem_symbols.end(); r++)
+	{
+		if (std::string(r->get_name()) == std::string(name))
+			return r;
+	}
+
+	return all_mem_symbols.end();
+}
+
 mattr::mattr()
 {
 
@@ -115,4 +139,15 @@ void mattr::add_symbol_vec(std::vector<mem_symbol> &v)
 {
     for(size_t i=0; i<v.size(); ++i)
         add_symbol(v[i]);
+}
+
+void mattr::remove_symbol(const char* name)
+{
+	mem_symbol* rm_symbol = syms.find_symbol(name);
+	if (!rm_symbol)
+	{
+		//std::cerr << "Unable to find symbol: " << name << std::endl;
+		return;
+	}
+	syms.remove(*rm_symbol);
 }

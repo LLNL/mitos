@@ -41,6 +41,11 @@ void Mitos_add_symbol(const char* n, void *a, size_t s, size_t *dims, unsigned i
     m_mattr.add_symbol(n,a,s,dims,ndims); 
 }
 
+void Mitos_remove_symbol(const char* n)
+{
+	m_mattr.remove_symbol(n);
+}
+
 int Mitos_resolve_symbol(struct perf_event_sample *s)
 {
     mem_symbol *m = m_mattr.find_symbol(s->addr);

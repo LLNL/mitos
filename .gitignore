@@ -2,4 +2,7 @@
 *.o
 *.swp
 
+cscope.files
+cscope.out
+
 build/
