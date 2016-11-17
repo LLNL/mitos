@@ -45,10 +45,10 @@ long Mitos_y_index(struct perf_event_sample *s);
 long Mitos_z_index(struct perf_event_sample *s);
 
 // Output
-int Mitos_create_output(mitos_output *mout, const char *prefix_name = "mitos");
-int Mitos_pre_process(mitos_output *mout);
-int Mitos_write_sample(perf_event_sample *s, mitos_output *mout);
-int Mitos_post_process(const char *bin_name, mitos_output *mout);
+int Mitos_create_output(struct mitos_output *mout, const char *prefix_name);
+int Mitos_pre_process(struct mitos_output *mout);
+int Mitos_write_sample(struct perf_event_sample *s, struct mitos_output *mout);
+int Mitos_post_process(const char *bin_name, struct mitos_output *mout);
 
 #ifdef __cplusplus
 } // extern "C"
@@ -102,10 +102,7 @@ struct perf_event_sample
 
 struct mitos_output
 {
-    mitos_output()
-      { memset(this,0,sizeof(struct mitos_output)); ok=false; }
-
-    bool ok;
+    int ok;
 
     char *dname_topdir;
     char *dname_datadir;

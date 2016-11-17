@@ -67,7 +67,7 @@ int main(int argc, char **argv)
     double *a,*b,*c;
     init_matrices(N,&a,&b,&c);
 
-    Mitos_create_output(&mout);
+    Mitos_create_output(&mout, "mitos");
     Mitos_pre_process(&mout);
 
     Mitos_set_handler_fn(&sample_handler,NULL);

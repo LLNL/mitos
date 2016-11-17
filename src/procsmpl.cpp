@@ -64,6 +64,7 @@ void procsmpl::init_attrs()
 {
     num_attrs = 2;
     attrs = (struct perf_event_attr*)malloc(num_attrs*sizeof(struct perf_event_attr));
+    num_attrs = 1;
 
     struct perf_event_attr attr;
     memset(&attr, 0, sizeof(struct perf_event_attr));

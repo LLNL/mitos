@@ -26,6 +26,8 @@ using namespace InstructionAPI;
 
 int Mitos_create_output(mitos_output *mout, const char *prefix_name)
 {
+    memset(mout,0,sizeof(struct mitos_output));
+
     // Set top directory name
     std::stringstream ss_dname_topdir;
     ss_dname_topdir << prefix_name << "_" << std::time(NULL);

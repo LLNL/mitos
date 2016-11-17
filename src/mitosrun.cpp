@@ -142,7 +142,7 @@ int main(int argc, char **argv)
         int status;
         wait(&status);
 
-        int err = Mitos_create_output(&mout);
+        int err = Mitos_create_output(&mout, "mitos");
         if(err)
         {
             kill(child, SIGKILL);
