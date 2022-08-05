@@ -18,7 +18,7 @@ Mitos requires:
 
 * [Dyninst](http://www.dyninst.org) version 8.2 or higher.
 
-* [hwloc](http://www.open-mpi.org/projects/hwloc/) 
+* [hwloc](http://www.open-mpi.org/projects/hwloc/)
 
 ## Building
 
@@ -74,13 +74,20 @@ Mitos requires:
 
 # Authors
 
-Mitos and MemAxes were written by Alfredo Gimenez. 
+Mitos and MemAxes were originally written by Alfredo Gimenez.
 
 Thanks to Todd Gamblin for suggestions and for giving Mitos a proper build setup.
 
 # License
 
-Mitos is released as part of MemAxes under an LGPL license. For more
-details see the [LICENSE](/LICENSE) file.
+Mitos is distributed under the Apache-2.0 license with the LLVM exception.
+All new contributions must be made under this license. Copyrights and patents
+in the Mitos project are retained by contributors. No copyright assignment is
+required to contribute to Mitos.
 
-`LLNL-CODE-663358`
+See [LICENSE](https://github.com/llnl/mitos/blob/develop/LICENSE) and
+[NOTICE](https://github.com/llnl/mitos/blob/develop/NOTICE) for details.
+
+SPDX-License-Identifier: (Apache-2.0 WITH LLVM-exception)
+
+`LLNL-CODE-837074`
